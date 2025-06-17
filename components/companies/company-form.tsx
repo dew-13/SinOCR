@@ -13,16 +13,12 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 
 // Common industries for selection
 const industries = [
-  "Technology",
-  "Healthcare",
-  "Finance",
-  "Manufacturing",
-  "Retail",
-  "Education",
-  "Construction",
-  "Transportation",
-  "Energy",
+  "Food Service",
   "Agriculture",
+  "Airport Ground Handling",
+  "Building Cleaning",
+  "Care Giver",
+  "Driving",
   "Other",
 ]
 
@@ -37,6 +33,11 @@ const prefectures = [
   "Kumamoto", "Oita", "Miyazaki", "Kagoshima", "Okinawa"
 ]
 
+// Add a list of countries
+const countries = [
+  "Japan", "United Arab Emirates", "Qatar", "Saudi Arabia", "Kuwait", "Bahrain", "Oman", "India", "Singapore", "Malaysia", "Other"
+]
+
 interface CompanyFormProps {
   company?: any
   isEdit?: boolean
@@ -49,16 +50,12 @@ export default function CompanyForm({ company, isEdit = false, onSuccess }: Comp
   const [error, setError] = useState("")
   const [formData, setFormData] = useState({
     companyName: company?.company_name || "",
-    country: company?.country || "Japan", // Set Japan as default
+    country: company?.country || "Japan",
     industry: company?.industry || "",
     contactPerson: company?.contact_person || "",
     contactEmail: company?.contact_email || "",
-    contactPhone: company?.contact_phone || "",
-    postalCode: company?.postal_code || "",
-    prefecture: company?.prefecture || "",
-    city: company?.city || "",
-    district: company?.district || "",
-    buildingNumber: company?.building_number || "",
+    contactPhone: company?.contact_phone || "+81-",
+    address: company?.address || "",
   })
 
   // Validation functions
@@ -68,10 +65,9 @@ export default function CompanyForm({ company, isEdit = false, onSuccess }: Comp
   }
 
   const validatePhone = (phone: string) => {
-    // Remove any non-digit characters
-    const digitsOnly = phone.replace(/\D/g, "")
-    // Check if it's a valid Japanese phone number (10-11 digits)
-    return digitsOnly.length >= 10 && digitsOnly.length <= 11
+    // Expect format: +81-XX-XXXX-XXXX
+    const phoneRegex = /^\+81\-\d{2}\-\d{4}\-\d{4}$/
+    return phoneRegex.test(phone)
   }
 
   const validateForm = () => {
@@ -95,32 +91,16 @@ export default function CompanyForm({ company, isEdit = false, onSuccess }: Comp
       setError("Please enter a valid email address (e.g., contact@company.com)")
       return false
     }
-    if (!formData.contactPhone.trim()) {
+    if (!formData.contactPhone.trim() || formData.contactPhone === "+81-") {
       setError("Contact phone is required")
       return false
     }
     if (!validatePhone(formData.contactPhone)) {
-      setError("Please enter a valid Japanese phone number (e.g., 090-1234-5678)")
+      setError("Please enter a valid Japanese phone number (e.g., +81-90-1234-5678)")
       return false
     }
-    if (!formData.postalCode.trim()) {
-      setError("Postal code is required")
-      return false
-    }
-    if (!formData.prefecture.trim()) {
-      setError("Prefecture is required")
-      return false
-    }
-    if (!formData.city.trim()) {
-      setError("City is required")
-      return false
-    }
-    if (!formData.district.trim()) {
-      setError("District is required")
-      return false
-    }
-    if (!formData.buildingNumber.trim()) {
-      setError("Building number is required")
+    if (!formData.address.trim()) {
+      setError("Address is required")
       return false
     }
     return true
@@ -172,9 +152,38 @@ export default function CompanyForm({ company, isEdit = false, onSuccess }: Comp
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
+  const formatPhoneInput = (value: string) => {
+    // Remove all non-digit characters except the initial '+81-'
+    let digits = value.replace(/[^\d]/g, "")
+    if (digits.startsWith("81")) digits = digits.slice(2)
+    // Only allow up to 10 digits after country code
+    digits = digits.slice(0, 10)
+    let formatted = "+81-"
+    if (digits.length > 0) {
+      formatted += digits.slice(0, 2)
+    }
+    if (digits.length > 2) {
+      formatted += "-" + digits.slice(2, 6)
+    }
+    if (digits.length > 6) {
+      formatted += "-" + digits.slice(6, 10)
+    }
+    return formatted
+  }
+
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
-    handleInputChange("contactPhone", value)
+    // Always keep '+81-' at the start
+    let formatted = formatPhoneInput(value)
+    setFormData((prev) => ({ ...prev, contactPhone: formatted }))
+  }
+
+  const handleCancel = () => {
+    if (onSuccess) {
+      onSuccess()
+    } else {
+      router.push("/dashboard/companies")
+    }
   }
 
   return (
@@ -211,15 +220,30 @@ export default function CompanyForm({ company, isEdit = false, onSuccess }: Comp
 
               <div>
                 <Label htmlFor="country">Country *</Label>
-                <Input
-                  id="country"
-                  value={formData.country}
-                  onChange={(e) => handleInputChange("country", e.target.value)}
-                  required
-                  disabled={loading}
-                  readOnly
-                  className="bg-gray-100"
-                />
+                {isEdit ? (
+                  <Select value={formData.country} onValueChange={(value) => handleInputChange("country", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {countries.map((country) => (
+                        <SelectItem key={country} value={country}>
+                          {country}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    id="country"
+                    value={formData.country}
+                    onChange={(e) => handleInputChange("country", e.target.value)}
+                    required
+                    disabled={loading}
+                    readOnly
+                    className="bg-gray-100"
+                  />
+                )}
               </div>
 
               <div>
@@ -278,10 +302,11 @@ export default function CompanyForm({ company, isEdit = false, onSuccess }: Comp
                   onChange={handlePhoneChange}
                   required
                   disabled={loading}
-                  placeholder="+81-090-1234-5678"
+                  placeholder="+81-90-1234-5678"
+                  maxLength={16}
                 />
                 <p className="text-sm text-muted-foreground mt-1">
-                  Enter a valid Japanese phone number (10-11 digits)
+                  Format: +81-90-1234-5678
                 </p>
               </div>
             </div>
@@ -290,70 +315,17 @@ export default function CompanyForm({ company, isEdit = false, onSuccess }: Comp
           {/* Address */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Address</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="postalCode">Postal Code *</Label>
-                <Input
-                  id="postalCode"
-                  value={formData.postalCode}
-                  onChange={(e) => handleInputChange("postalCode", e.target.value)}
-                  required
-                  disabled={loading}
-                  placeholder="123-4567"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="prefecture">Prefecture *</Label>
-                <Select value={formData.prefecture} onValueChange={(value) => handleInputChange("prefecture", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select prefecture" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {prefectures.map((prefecture) => (
-                      <SelectItem key={prefecture} value={prefecture}>
-                        {prefecture}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="city">City *</Label>
-                <Input
-                  id="city"
-                  value={formData.city}
-                  onChange={(e) => handleInputChange("city", e.target.value)}
-                  required
-                  disabled={loading}
-                  placeholder="Enter city name"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="district">District/Street *</Label>
-                <Input
-                  id="district"
-                  value={formData.district}
-                  onChange={(e) => handleInputChange("district", e.target.value)}
-                  required
-                  disabled={loading}
-                  placeholder="Enter district or street name"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="buildingNumber">Building Number *</Label>
-                <Input
-                  id="buildingNumber"
-                  value={formData.buildingNumber}
-                  onChange={(e) => handleInputChange("buildingNumber", e.target.value)}
-                  required
-                  disabled={loading}
-                  placeholder="Enter building number"
-                />
-              </div>
+            <div>
+              <Label htmlFor="address">Company Address *</Label>
+              <Textarea
+                id="address"
+                value={formData.address}
+                onChange={(e) => handleInputChange("address", e.target.value)}
+                required
+                disabled={loading}
+                rows={3}
+                placeholder="Enter company address"
+              />
             </div>
           </div>
 
@@ -361,7 +333,7 @@ export default function CompanyForm({ company, isEdit = false, onSuccess }: Comp
             <Button type="submit" disabled={loading}>
               {loading ? "Saving..." : isEdit ? "Update Company" : "Add Company"}
             </Button>
-            <Button type="button" variant="outline" onClick={() => onSuccess?.()}>
+            <Button type="button" variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
           </div>

@@ -25,6 +25,7 @@ export const PERMISSIONS = {
   UPDATE_EMPLOYEE: ["owner", "admin"],
 
   // Analytics
+  VIEW_BASIC_ANALYTICS: ["owner", "admin", "teacher"],
   VIEW_DESCRIPTIVE_ANALYTICS: ["owner", "admin", "teacher"],
   VIEW_PREDICTIVE_ANALYTICS: ["owner"],
 } as const

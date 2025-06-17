@@ -43,7 +43,7 @@ export default function Sidebar({ userRole, userName }: SidebarProps) {
       title: "Dashboard",
       href: "/dashboard",
       icon: Home,
-      permission: "VIEW_DESCRIPTIVE_ANALYTICS",
+      permission: "VIEW_BASIC_ANALYTICS",
     },
     {
       title: "Students",
@@ -64,13 +64,7 @@ export default function Sidebar({ userRole, userName }: SidebarProps) {
       permission: "VIEW_EMPLOYEES",
     },
     {
-      title: "Users",
-      href: "/dashboard/users",
-      icon: Users,
-      permission: "VIEW_ALL_USERS",
-    },
-    {
-      title: "Companies",
+      title: "Partner Companies",
       href: "/dashboard/companies",
       icon: Building2,
       permission: "VIEW_COMPANIES",
@@ -92,6 +86,12 @@ export default function Sidebar({ userRole, userName }: SidebarProps) {
       href: "/dashboard/analytics/predictive",
       icon: BrainCircuit,
       permission: "VIEW_PREDICTIVE_ANALYTICS",
+    },
+    {
+      title: "System Users",
+      href: "/dashboard/users",
+      icon: Users,
+      permission: "VIEW_ALL_USERS",
     },
   ]
 
@@ -137,7 +137,7 @@ export default function Sidebar({ userRole, userName }: SidebarProps) {
               <Shield className="h-6 w-6 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="font-bold text-lg text-gray-900 truncate">SMS</h1>
+              <h1 className="font-bold text-lg text-gray-900 truncate">Sun Lanka</h1>
               <div className="flex items-center gap-2 mt-1">
                 <Badge className={`text-xs px-2 py-0.5 ${getRoleBadgeColor(userRole)}`}>
                   {userRole.charAt(0).toUpperCase() + userRole.slice(1)}

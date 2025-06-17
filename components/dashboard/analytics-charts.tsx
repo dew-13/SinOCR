@@ -15,35 +15,36 @@ import {
   LineChart,
   Line,
 } from "recharts"
+import { Users, GraduationCap, Building2, Briefcase, UserPlus } from "lucide-react"
 
 interface AnalyticsChartsProps {
   data: {
     totalStudents: number
     employedStudents: number
+    totalUsers: number
+    totalCompanies: number
+    totalEmployees: number
     districtStats: Array<{ district: string; count: number }>
     provinceStats: Array<{ province: string; count: number }>
     monthlyRegistrations: Array<{ month: string; count: number }>
+    totalRegisteredStudents: number
   }
 }
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8", "#82CA9D"]
 
 export default function AnalyticsCharts({ data }: AnalyticsChartsProps) {
-  const employmentRate =
-    data.totalStudents > 0
-      ? ((data.employedStudents / (data.totalStudents + data.employedStudents)) * 100).toFixed(1)
-      : 0
-
   return (
     <div className="grid gap-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Students</CardTitle>
+            <CardTitle className="text-sm font-medium">Registered Students</CardTitle>
+            <GraduationCap className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.totalStudents}</div>
+            <div className="text-2xl font-bold">{typeof data.totalRegisteredStudents === 'number' ? data.totalRegisteredStudents : 0}</div>
             <p className="text-xs text-muted-foreground">Currently registered</p>
           </CardContent>
         </Card>
@@ -51,20 +52,33 @@ export default function AnalyticsCharts({ data }: AnalyticsChartsProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Employed Students</CardTitle>
+            <Briefcase className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.employedStudents}</div>
+            <div className="text-2xl font-bold">{data.totalEmployees}</div>
             <p className="text-xs text-muted-foreground">Successfully placed</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Employment Rate</CardTitle>
+            <CardTitle className="text-sm font-medium">System Users</CardTitle>
+            <Users className="h-4 w-4 text-purple-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{employmentRate}%</div>
-            <p className="text-xs text-muted-foreground">Success rate</p>
+            <div className="text-2xl font-bold">{data.totalUsers}</div>
+            <p className="text-xs text-muted-foreground">Total users</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Partner Companies</CardTitle>
+            <Building2 className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{data.totalCompanies}</div>
+            <p className="text-xs text-muted-foreground">Total companies</p>
           </CardContent>
         </Card>
       </div>
@@ -98,23 +112,13 @@ export default function AnalyticsCharts({ data }: AnalyticsChartsProps) {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={data.provinceStats}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ province, percent }) => `${province} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="count"
-                >
-                  {data.provinceStats.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
+              <BarChart data={data.provinceStats}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="province" angle={-45} textAnchor="end" height={80} />
+                <YAxis />
                 <Tooltip />
-              </PieChart>
+                <Bar dataKey="count" fill="#00C49F" />
+              </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>

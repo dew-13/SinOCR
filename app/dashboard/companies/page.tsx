@@ -5,8 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Plus, Edit, Trash2, Building2, Mail, Phone, MapPin, Users } from "lucide-react"
+import { Plus, Edit, Trash2, Building2, Mail, Phone } from "lucide-react"
 import { hasPermission } from "@/lib/permissions"
 
 export default function CompaniesPage() {
@@ -97,10 +96,9 @@ export default function CompaniesPage() {
           <h1 className="text-3xl font-bold tracking-tight">Company Management</h1>
           <p className="text-muted-foreground">Manage partner companies and employers</p>
         </div>
-        <Alert variant="destructive">
-          <Building2 className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
+          {error}
+        </div>
       </div>
     )
   }
@@ -136,10 +134,6 @@ export default function CompaniesPage() {
                       {company.company_name}
                       <Badge variant="outline">{company.industry || "General"}</Badge>
                     </CardTitle>
-                    <CardDescription className="flex items-center gap-2 mt-1">
-                      <MapPin className="h-3 w-3" />
-                      {company.country}
-                    </CardDescription>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -164,7 +158,7 @@ export default function CompaniesPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div>
                   <p className="font-medium">Contact Person</p>
                   <p className="text-muted-foreground">{company.contact_person || "Not specified"}</p>
@@ -183,20 +177,7 @@ export default function CompaniesPage() {
                     {company.contact_phone || "Not provided"}
                   </p>
                 </div>
-                <div>
-                  <p className="font-medium">Employees</p>
-                  <p className="text-muted-foreground flex items-center gap-1">
-                    <Users className="h-3 w-3" />
-                    {company.employee_count || 0} students
-                  </p>
-                </div>
               </div>
-              {company.address && (
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                  <p className="font-medium text-sm">Address</p>
-                  <p className="text-sm text-muted-foreground">{company.address}</p>
-                </div>
-              )}
             </CardContent>
           </Card>
         ))}

@@ -7,12 +7,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Plus, Edit, Trash2, Building2, Mail, Phone } from "lucide-react"
 import { hasPermission } from "@/lib/permissions"
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog"
 
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [error, setError] = useState("")
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [companyToDelete, setCompanyToDelete] = useState<any>(null)
 
   useEffect(() => {
     const userData = localStorage.getItem("user")
@@ -52,18 +65,23 @@ export default function CompaniesPage() {
     }
   }
 
-  const handleDeleteCompany = async (companyId: number) => {
-    if (!confirm("Are you sure you want to delete this company?")) return
+  const handleDeleteClick = (company: any) => {
+    setCompanyToDelete(company)
+    setDeleteDialogOpen(true)
+  }
 
+  const confirmDeleteCompany = async () => {
+    if (!companyToDelete) return
     try {
       const token = localStorage.getItem("token")
-      const response = await fetch(`/api/companies/${companyId}`, {
+      const response = await fetch(`/api/companies/${companyToDelete.id}` , {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       })
-
       if (response.ok) {
-        fetchCompanies() // Refresh the list
+        fetchCompanies()
+        setDeleteDialogOpen(false)
+        setCompanyToDelete(null)
       } else {
         const errorData = await response.json()
         alert(errorData.error || "Failed to delete company")
@@ -94,7 +112,7 @@ export default function CompaniesPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Company Management</h1>
-          <p className="text-muted-foreground">Manage partner companies and employers</p>
+          <p className="text-muted-foreground">Manage partner companies in Japan</p>
         </div>
         <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
           {error}
@@ -108,7 +126,7 @@ export default function CompaniesPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Company Management</h1>
-          <p className="text-muted-foreground">Manage partner companies and employers</p>
+          <p className="text-muted-foreground">Manage partner companies in Japan</p>
         </div>
         {user && hasPermission(user.role, "CREATE_COMPANY") && (
           <Link href="/dashboard/companies/add">
@@ -130,9 +148,11 @@ export default function CompaniesPage() {
                     <Building2 className="h-6 w-6 text-white" />
                   </div>
                   <div>
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex flex-col gap-1">
                       {company.company_name}
-                      <Badge variant="outline">{company.industry || "General"}</Badge>
+                      <span className="block text-sm font-normal text-muted-foreground">
+                        {company.industry || "General"}
+                      </span>
                     </CardTitle>
                   </div>
                 </div>
@@ -145,37 +165,48 @@ export default function CompaniesPage() {
                     </Link>
                   )}
                   {user && hasPermission(user.role, "DELETE_COMPANY") && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteCompany(company.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteClick(company)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Company</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete <b>{companyToDelete?.company_name}</b>? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={confirmDeleteCompany}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   )}
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <p className="font-medium">Contact Person</p>
-                  <p className="text-muted-foreground">{company.contact_person || "Not specified"}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Email</p>
-                  <p className="text-muted-foreground flex items-center gap-1">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{company.contact_person  || "Not specified"}</span>
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <Phone className="h-3 w-3" />
+                      {company.contact_phone || "Not provided"}
+                    </span>
+                  </div>
+                  <div className="text-muted-foreground flex items-center gap-1 mt-1">
                     <Mail className="h-3 w-3" />
                     {company.contact_email || "Not provided"}
-                  </p>
-                </div>
-                <div>
-                  <p className="font-medium">Phone</p>
-                  <p className="text-muted-foreground flex items-center gap-1">
-                    <Phone className="h-3 w-3" />
-                    {company.contact_phone || "Not provided"}
-                  </p>
+                  </div>
                 </div>
               </div>
             </CardContent>

@@ -83,40 +83,44 @@ export async function updateUser(
     email?: string
     fullName?: string
     role?: string
+    passwordHash?: string
   },
 ) {
-  const updates = []
+  const fields = []
   const values = []
+  let idx = 1
 
   if (userData.email) {
-    updates.push("email = $" + (updates.length + 2))
+    fields.push(`email = $${++idx}`)
     values.push(userData.email)
   }
   if (userData.fullName) {
-    updates.push("full_name = $" + (updates.length + 2))
+    fields.push(`full_name = $${++idx}`)
     values.push(userData.fullName)
   }
   if (userData.role) {
-    updates.push("role = $" + (updates.length + 2))
+    fields.push(`role = $${++idx}`)
     values.push(userData.role)
   }
+  if (userData.passwordHash) {
+    fields.push(`password_hash = $${++idx}`)
+    values.push(userData.passwordHash)
+  }
 
-  if (updates.length === 0) return null
+  if (fields.length === 0) return null
 
-  updates.push("updated_at = CURRENT_TIMESTAMP")
+  fields.push(`updated_at = CURRENT_TIMESTAMP`)
 
-  return await sql`
-    UPDATE users 
-    SET ${sql.unsafe(updates.join(", "))}
-    WHERE id = ${id}
-    RETURNING id, email, full_name, role
-  `
+  // id is always the first parameter
+  return await sql(
+    `UPDATE users SET ${fields.join(', ')} WHERE id = $1 RETURNING id, email, full_name, role`,
+    [id, ...values]
+  )
 }
 
 export async function deleteUser(id: number) {
   return await sql`
-    UPDATE users 
-    SET is_active = false, updated_at = CURRENT_TIMESTAMP
+    DELETE FROM users
     WHERE id = ${id}
     RETURNING id
   `
@@ -271,8 +275,7 @@ export async function updateCompany(id: number, companyData: any) {
 
 export async function deleteCompany(id: number) {
   return await sql`
-    UPDATE companies 
-    SET is_active = false, updated_at = CURRENT_TIMESTAMP
+    DELETE FROM companies
     WHERE id = ${id}
     RETURNING id
   `

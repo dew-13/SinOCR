@@ -3,18 +3,33 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Plus, Edit, Trash2, Shield, Mail, Calendar, User } from "lucide-react"
+import { Plus, Edit, Trash2, Shield, Mail, Calendar, User, UserCog, UserCheck } from "lucide-react"
 import { hasPermission } from "@/lib/permissions"
 import { formatDate } from "@/lib/utils"
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog"
+import UserForm from "@/components/users/user-form"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 export default function UsersPage() {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [error, setError] = useState("")
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [userToDelete, setUserToDelete] = useState<any>(null)
 
   useEffect(() => {
     const userData = localStorage.getItem("user")
@@ -54,18 +69,24 @@ export default function UsersPage() {
     }
   }
 
-  const handleDeleteUser = async (userId: number) => {
-    if (!confirm("Are you sure you want to delete this user?")) return
+  const handleDeleteClick = (user: any) => {
+    setUserToDelete(user)
+    setDeleteDialogOpen(true)
+  }
 
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return
     try {
       const token = localStorage.getItem("token")
-      const response = await fetch(`/api/users/${userId}`, {
+      const response = await fetch(`/api/users/${userToDelete.id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       })
 
       if (response.ok) {
-        fetchUsers() // Refresh the list
+        fetchUsers()
+        setDeleteDialogOpen(false)
+        setUserToDelete(null)
       } else {
         const errorData = await response.json()
         alert(errorData.error || "Failed to delete user")
@@ -124,7 +145,7 @@ export default function UsersPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
-          <p className="text-muted-foreground">Manage system users and their roles</p>
+          <p className="text-muted-foreground">View all users in the system</p>
         </div>
         {user && (hasPermission(user.role, "CREATE_ADMIN") || hasPermission(user.role, "CREATE_TEACHER")) && (
           <Link href="/dashboard/users/add">
@@ -137,70 +158,79 @@ export default function UsersPage() {
       </div>
 
       <div className="grid gap-4">
-        {users.map((userData: any) => (
-          <Card key={userData.id} className="hover:shadow-md transition-shadow">
+        {users.map((user: any) => (
+          <Card key={user.id} className="hover:shadow-md transition-shadow">
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-600">
-                    <User className="h-6 w-6 text-white" />
+                  <div className={
+                    (user.role === "owner"
+                      ? "bg-gradient-to-r from-blue-500 to-purple-600"
+                      : user.role === "admin"
+                      ? "bg-gradient-to-r from-green-500 to-blue-400"
+                      : "bg-gradient-to-r from-yellow-400 to-orange-500") +
+                    " flex h-12 w-12 items-center justify-center rounded-full"
+                  }>
+                    {user.role === "admin" ? (
+                      <UserCog className="h-6 w-6 text-white" />
+                    ) : user.role === "teacher" ? (
+                      <UserCheck className="h-6 w-6 text-white" />
+                    ) : (
+                      <User className="h-6 w-6 text-white" />
+                    )}
                   </div>
                   <div>
-                    <CardTitle className="flex items-center gap-2">
-                      {userData.full_name}
-                      <Badge className={getRoleBadgeColor(userData.role)}>
-                        {userData.role.charAt(0).toUpperCase() + userData.role.slice(1)}
-                      </Badge>
+                    <CardTitle className="flex flex-col gap-1">
+                      {user.full_name}
+                      <span className="block text-sm font-normal text-muted-foreground">
+                        {user.role}
+                      </span>
                     </CardTitle>
-                    <CardDescription className="flex items-center gap-2 mt-1">
-                      <Mail className="h-3 w-3" />
-                      {userData.email}
-                    </CardDescription>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  {user && hasPermission(user.role, "UPDATE_USER") && (
-                    <Link href={`/dashboard/users/${userData.id}/edit`}>
-                      <Button variant="outline" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  )}
-                  {user && hasPermission(user.role, "DELETE_USER") && userData.id !== user.id && (
+                  <Link href={`/dashboard/users/${user.id}/edit`}>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDeleteUser(userData.id)}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-blue-600 hover:text-blue-700"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Edit className="h-4 w-4" />
                     </Button>
-                  )}
+                  </Link>
+                  <AlertDialog open={deleteDialogOpen && userToDelete?.id === user.id} onOpenChange={setDeleteDialogOpen}>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteClick(user)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete User</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete <b>{userToDelete?.full_name}</b>? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDeleteUser}>Delete</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <p className="font-medium">User ID</p>
-                  <p className="text-muted-foreground">#{userData.id}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Created By</p>
-                  <p className="text-muted-foreground">{userData.created_by_name || "System"}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Created Date</p>
-                  <p className="text-muted-foreground flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    {formatDate(userData.created_at)}
-                  </p>
-                </div>
-                <div>
-                  <p className="font-medium">Status</p>
-                  <Badge variant={userData.is_active ? "default" : "secondary"}>
-                    {userData.is_active ? "Active" : "Inactive"}
-                  </Badge>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div className="flex flex-col gap-1">
+                  <span className="text-muted-foreground break-all whitespace-nowrap overflow-auto">{user.email}</span>
+                  
+                  <span className="text-xs text-gray-400">Since: {user.created_at ? new Date(user.created_at).toLocaleDateString() : "-"}</span>
                 </div>
               </div>
             </CardContent>

@@ -53,9 +53,6 @@ export default function Sidebar({ userRole, userName }: SidebarProps) {
           <SidebarLink href="/dashboard/students" icon={GraduationCap} label="Registered Students" pathname={pathname} setIsOpen={setIsOpen} />
           <SidebarLink href="/dashboard/employees" icon={Briefcase} label="Employed Students" pathname={pathname} setIsOpen={setIsOpen} />
         </SidebarGroup>
-        <SidebarGroup label="Analysis" color="from-indigo-100 to-indigo-50" fontColor="text-indigo-900">
-          <SidebarLink href="/dashboard/analytics/descriptive" icon={BarChart3} label="Post Analysis" pathname={pathname} setIsOpen={setIsOpen} />
-        </SidebarGroup>
       </>
     );
   } else if (userRole === "admin") {
@@ -72,9 +69,6 @@ export default function Sidebar({ userRole, userName }: SidebarProps) {
         <SidebarGroup label="Teachers" color="from-yellow-100 to-yellow-50" fontColor="text-yellow-900">
           <SidebarLink href="/dashboard/users" icon={Users} label="Teachers" pathname={pathname} setIsOpen={setIsOpen} />
           <SidebarButton label="Add Teachers" icon={UserPlus} onClick={() => router.push("/dashboard/users/add")} />
-        </SidebarGroup>
-        <SidebarGroup label="Analysis" color="from-indigo-100 to-indigo-50" fontColor="text-indigo-900">
-          <SidebarLink href="/dashboard/analytics/descriptive" icon={BarChart3} label="Post Analysis" pathname={pathname} setIsOpen={setIsOpen} />
         </SidebarGroup>
       </>
     );
@@ -97,13 +91,27 @@ export default function Sidebar({ userRole, userName }: SidebarProps) {
           <SidebarLink href="/dashboard/users?role=admin" icon={Users} label="Admins" pathname={pathname} setIsOpen={setIsOpen} />
           <SidebarLink href="/dashboard/users?role=teacher" icon={Users} label="Teachers" pathname={pathname} setIsOpen={setIsOpen} />
         </SidebarGroup>
-        <SidebarGroup label="Analysis" color="from-indigo-100 to-indigo-50" fontColor="text-indigo-900">
-          <SidebarLink href="/dashboard/analytics/descriptive" icon={BarChart3} label="Post Analysis" pathname={pathname} setIsOpen={setIsOpen} />
-          <SidebarLink href="/dashboard/analytics/predictive" icon={BrainCircuit} label="Pre Analysis" pathname={pathname} setIsOpen={setIsOpen} />
-        </SidebarGroup>
       </>
     );
   }
+
+  // Always render the Analysis group with Post Analysis link
+  const analysisGroup = (
+    <SidebarGroup label="Analysis" color="from-indigo-100 to-indigo-50" fontColor="text-indigo-900">
+      <SidebarLink href="/dashboard/analytics/descriptive" icon={BarChart3} label="Post Analysis" pathname={pathname} setIsOpen={setIsOpen} />
+      {(userRole === "owner" || userRole === "developer") && (
+        <SidebarLink href="/dashboard/analytics/predictive" icon={BrainCircuit} label="Pre Analysis" pathname={pathname} setIsOpen={setIsOpen} />
+      )}
+    </SidebarGroup>
+  );
+
+  // Combine role-based content with the always-visible Analysis group
+  const finalSidebarContent = (
+    <>
+      {sidebarContent}
+      {analysisGroup}
+    </>
+  );
 
   // SidebarLink, SidebarGroup, SidebarButton components
   function SidebarLink({ href, icon: Icon, label, pathname, setIsOpen }: any) {
@@ -210,7 +218,7 @@ export default function Sidebar({ userRole, userName }: SidebarProps) {
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-            {sidebarContent}
+            {finalSidebarContent}
           </nav>
 
           {/* Footer */}

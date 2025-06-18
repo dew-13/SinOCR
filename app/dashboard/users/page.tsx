@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import UserForm from "@/components/users/user-form"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useRouter, useSearchParams } from "next/navigation"
 
 export default function UsersPage() {
   const [users, setUsers] = useState([])
@@ -30,6 +31,8 @@ export default function UsersPage() {
   const [error, setError] = useState("")
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [userToDelete, setUserToDelete] = useState<any>(null)
+  const searchParams = useSearchParams();
+  const roleFilter = searchParams.get("role");
 
   useEffect(() => {
     const userData = localStorage.getItem("user")
@@ -158,87 +161,103 @@ export default function UsersPage() {
       </div>
 
       <div className="grid gap-4">
-        {users.map((user: any) => (
-          <Card key={user.id} className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-4">
-                  <div className={
-                    (user.role === "owner"
-                      ? "bg-gradient-to-r from-blue-500 to-purple-600"
-                      : user.role === "admin"
-                      ? "bg-gradient-to-r from-green-500 to-blue-400"
-                      : "bg-gradient-to-r from-yellow-400 to-orange-500") +
-                    " flex h-12 w-12 items-center justify-center rounded-full"
-                  }>
-                    {user.role === "admin" ? (
-                      <UserCog className="h-6 w-6 text-white" />
-                    ) : user.role === "teacher" ? (
-                      <UserCheck className="h-6 w-6 text-white" />
-                    ) : (
-                      <User className="h-6 w-6 text-white" />
-                    )}
+        {users
+          .filter((u: any) => {
+            if (roleFilter === "admin") return u.role === "admin";
+            if (roleFilter === "teacher") return u.role === "teacher";
+            if (!user) return false;
+            if (user.role === "owner") return u.role === "admin" || u.role === "teacher";
+            if (user.role === "admin") return u.role === "teacher";
+            return false;
+          })
+          .map((user: any) => (
+            <Card key={user.id} className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-4">
+                    <div className={
+                      (user.role === "owner"
+                        ? "bg-gradient-to-r from-blue-500 to-purple-600"
+                        : user.role === "admin"
+                        ? "bg-gradient-to-r from-green-500 to-blue-400"
+                        : "bg-gradient-to-r from-yellow-400 to-orange-500") +
+                      " flex h-12 w-12 items-center justify-center rounded-full"
+                    }>
+                      {user.role === "admin" ? (
+                        <UserCog className="h-6 w-6 text-white" />
+                      ) : user.role === "teacher" ? (
+                        <UserCheck className="h-6 w-6 text-white" />
+                      ) : (
+                        <User className="h-6 w-6 text-white" />
+                      )}
+                    </div>
+                    <div>
+                      <CardTitle className="flex flex-col gap-1">
+                        {user.full_name}
+                        <span className="block text-sm font-normal text-muted-foreground">
+                          {user.role}
+                        </span>
+                      </CardTitle>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="flex flex-col gap-1">
-                      {user.full_name}
-                      <span className="block text-sm font-normal text-muted-foreground">
-                        {user.role}
-                      </span>
-                    </CardTitle>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Link href={`/dashboard/users/${user.id}/edit`}>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-blue-600 hover:text-blue-700"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                  <AlertDialog open={deleteDialogOpen && userToDelete?.id === user.id} onOpenChange={setDeleteDialogOpen}>
-                    <AlertDialogTrigger asChild>
+                  <div className="flex gap-2">
+                    <Link href={`/dashboard/users/${user.id}/edit`}>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDeleteClick(user)}
-                        className="text-red-600 hover:text-red-700"
+                        className="text-blue-600 hover:text-blue-700"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Edit className="h-4 w-4" />
                       </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete User</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete <b>{userToDelete?.full_name}</b>? This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmDeleteUser}>Delete</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                    </Link>
+                    <AlertDialog open={deleteDialogOpen && userToDelete?.id === user.id} onOpenChange={setDeleteDialogOpen}>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteClick(user)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete User</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete <b>{userToDelete?.full_name}</b>? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={confirmDeleteUser}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div className="flex flex-col gap-1">
-                  <span className="text-muted-foreground break-all whitespace-nowrap overflow-auto">{user.email}</span>
-                  
-                  <span className="text-xs text-gray-400">Since: {user.created_at ? new Date(user.created_at).toLocaleDateString() : "-"}</span>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-muted-foreground break-all whitespace-nowrap overflow-auto">{user.email}</span>
+                    
+                    <span className="text-xs text-gray-400">Since: {user.created_at ? new Date(user.created_at).toLocaleDateString() : "-"}</span>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          ))}
       </div>
 
-      {users.length === 0 && (
+      {users.filter((u: any) => {
+        if (roleFilter === "admin") return u.role === "admin";
+        if (roleFilter === "teacher") return u.role === "teacher";
+        if (!user) return false;
+        if (user.role === "owner") return u.role === "admin" || u.role === "teacher";
+        if (user.role === "admin") return u.role === "teacher";
+        return false;
+      }).length === 0 && (
         <Card>
           <CardHeader>
             <CardTitle>No Users Found</CardTitle>

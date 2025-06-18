@@ -1,22 +1,41 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Eye, EyeOff, Shield, Loader2 } from "lucide-react"
 
 export default function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+
+  // Load saved credentials on component mount
+  useEffect(() => {
+    const savedCredentials = localStorage.getItem("savedCredentials")
+    if (savedCredentials) {
+      try {
+        const { email: savedEmail, password: savedPassword } = JSON.parse(savedCredentials)
+        setEmail(savedEmail || "")
+        setPassword(savedPassword || "")
+        setRememberMe(true)
+      } catch (error) {
+        console.error("Error loading saved credentials:", error)
+        // Clear corrupted data
+        localStorage.removeItem("savedCredentials")
+      }
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,6 +52,14 @@ export default function LoginForm() {
       const data = await response.json()
 
       if (response.ok) {
+        // Save credentials if remember me is checked
+        if (rememberMe) {
+          localStorage.setItem("savedCredentials", JSON.stringify({ email, password }))
+        } else {
+          // Clear saved credentials if remember me is unchecked
+          localStorage.removeItem("savedCredentials")
+        }
+
         localStorage.setItem("token", data.token)
         localStorage.setItem("user", JSON.stringify(data.user))
         router.push("/dashboard")
@@ -108,6 +135,21 @@ export default function LoginForm() {
               </div>
             </div>
 
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="rememberMe"
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                disabled={loading}
+              />
+              <Label
+                htmlFor="rememberMe"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Remember me
+              </Label>
+            </div>
+
             <Button type="submit" className="w-full h-11" disabled={loading}>
               {loading ? (
                 <>
@@ -123,6 +165,10 @@ export default function LoginForm() {
           <div className="mt-8 p-4 bg-gray-50 rounded-lg">
             <p className="text-sm font-medium text-gray-700 mb-3">Demo Credentials:</p>
             <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="font-medium text-orange-600">Developer:</span>
+                <span className="text-gray-600">developer@system.com / admin123</span>
+              </div>
               <div className="flex justify-between">
                 <span className="font-medium text-purple-600">Owner:</span>
                 <span className="text-gray-600">owner@system.com / admin123</span>

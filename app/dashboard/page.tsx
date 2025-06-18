@@ -3,10 +3,13 @@
 import { useEffect, useState } from "react"
 import AnalyticsCharts from "@/components/dashboard/analytics-charts"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { AlertTriangle } from "lucide-react"
 
 export default function DashboardPage() {
   const [analyticsData, setAnalyticsData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchAnalytics()
@@ -15,16 +18,28 @@ export default function DashboardPage() {
   const fetchAnalytics = async () => {
     try {
       const token = localStorage.getItem("token")
+      if (!token) {
+        setError("No authentication token found")
+        setLoading(false)
+        return
+      }
+
+      console.log("Fetching analytics data...")
       const response = await fetch("/api/analytics", {
         headers: { Authorization: `Bearer ${token}` },
       })
 
-      if (response.ok) {
-        const data = await response.json()
-        setAnalyticsData(data)
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
       }
+
+      const data = await response.json()
+      console.log("Analytics data received:", data)
+      setAnalyticsData(data)
     } catch (error) {
       console.error("Failed to fetch analytics:", error)
+      setError(error instanceof Error ? error.message : "Failed to load analytics data")
     } finally {
       setLoading(false)
     }
@@ -41,6 +56,21 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">Overview of your student management system</p>
+        </div>
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       </div>
     )
   }

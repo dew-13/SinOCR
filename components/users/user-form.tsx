@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -9,8 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import sha256 from "crypto-js/sha256"
 import { useRouter } from "next/navigation"
-
-const roles = ["owner", "manager", "admin", "teacher"]
+import React from "react"
 
 interface UserFormProps {
   user?: any
@@ -19,6 +18,7 @@ interface UserFormProps {
 }
 
 export default function UserForm({ user, isEdit = false, onSuccess }: UserFormProps) {
+  const [allowedRoles, setAllowedRoles] = useState<string[]>([])
   const [formData, setFormData] = useState({
     fullName: user?.full_name || "",
     email: user?.email || "",
@@ -28,6 +28,26 @@ export default function UserForm({ user, isEdit = false, onSuccess }: UserFormPr
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
+
+  // Set allowedRoles based on logged-in user
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        const loggedInUser = JSON.parse(userData);
+        if (loggedInUser.role === "owner") setAllowedRoles(["admin", "teacher"]);
+        else if (loggedInUser.role === "admin") setAllowedRoles(["teacher"]);
+        else setAllowedRoles([]);
+      }
+    }
+  }, []);
+
+  // Set default role if not editing and allowedRoles changes
+  useEffect(() => {
+    if (!isEdit && allowedRoles.length > 0) {
+      setFormData((prev) => ({ ...prev, role: allowedRoles[0] }));
+    }
+  }, [allowedRoles, isEdit]);
 
   // Validate email format
   const validateEmail = (email: string) => {
@@ -156,7 +176,7 @@ export default function UserForm({ user, isEdit = false, onSuccess }: UserFormPr
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
-                {roles.map((role) => (
+                {allowedRoles.map((role) => (
                   <SelectItem key={role} value={role}>
                     {role.charAt(0).toUpperCase() + role.slice(1)}
                   </SelectItem>

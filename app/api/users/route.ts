@@ -39,12 +39,13 @@ export async function POST(request: NextRequest) {
     if (!hasPermission(decoded.role, "CREATE_ADMIN") && !hasPermission(decoded.role, "CREATE_TEACHER")) {
       return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 })
     }
-    const { email, passwordHash, fullName, role } = await request.json()
-    if (!email || !passwordHash || !fullName || !role) {
+    const { email, password, fullName, role } = await request.json()
+    if (!email || !password || !fullName || !role) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
     const createdBy = decoded.userId
     try {
+      const passwordHash = await hashPassword(password)
       const result = await createUser({ email, passwordHash, fullName, role, createdBy })
       return NextResponse.json(result[0])
     } catch (dbError) {

@@ -163,6 +163,7 @@ export default function UsersPage() {
       <div className="grid gap-4">
         {users
           .filter((u: any) => {
+            if (roleFilter === "owner") return u.role === "owner";
             if (roleFilter === "admin") return u.role === "admin";
             if (roleFilter === "teacher") return u.role === "teacher";
             if (!user) return false;
@@ -251,6 +252,7 @@ export default function UsersPage() {
       </div>
 
       {users.filter((u: any) => {
+        if (roleFilter === "owner") return u.role === "owner";
         if (roleFilter === "admin") return u.role === "admin";
         if (roleFilter === "teacher") return u.role === "teacher";
         if (!user) return false;

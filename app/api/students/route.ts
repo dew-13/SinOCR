@@ -20,7 +20,31 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 })
     }
 
-    const students = await getStudents()
+    const { searchParams } = new URL(request.url)
+    const options: any = {}
+    if (searchParams.get("q")) options.search = searchParams.get("q")
+    if (searchParams.get("marital_status")) options.marital_status = searchParams.get("marital_status")
+    if (searchParams.get("sex")) options.sex = searchParams.get("sex")
+    if (searchParams.get("district")) options.district = searchParams.get("district")
+    if (searchParams.get("province")) options.province = searchParams.get("province")
+    if (searchParams.get("has_driving_license")) options.has_driving_license = searchParams.get("has_driving_license")
+    if (searchParams.get("format")) options.format = searchParams.get("format")
+    const students = await getStudents(options)
+    if (options.format === "csv") {
+      // Convert to CSV
+      const fields = students.length > 0 ? Object.keys(students[0]) : []
+      const csvRows = [fields.join(",")].concat(
+        students.map((row: any) => fields.map(f => `"${(row[f] ?? "").toString().replace(/"/g, '""')}"`).join(","))
+      )
+      const csv = csvRows.join("\r\n")
+      return new NextResponse(csv, {
+        status: 200,
+        headers: {
+          "Content-Type": "text/csv",
+          "Content-Disposition": "attachment; filename=students.csv"
+        }
+      })
+    }
     return NextResponse.json(students)
   } catch (error) {
     console.error("Students fetch error:", error)

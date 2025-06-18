@@ -127,11 +127,56 @@ export async function deleteUser(id: number) {
 }
 
 // Student management
-export async function getStudents(limit?: number) {
-  const query = limit
-    ? sql`SELECT * FROM students ORDER BY created_at DESC LIMIT ${limit}`
-    : sql`SELECT * FROM students ORDER BY created_at DESC`
-  return await query
+export async function getStudents(options?: {
+  search?: string,
+  marital_status?: string,
+  sex?: string,
+  district?: string,
+  province?: string,
+  has_driving_license?: string,
+  format?: string,
+}) {
+  let whereClauses = []
+  let values = []
+  let idx = 1
+
+  if (options?.search) {
+    whereClauses.push(`(national_id ILIKE $${idx} OR passport_id ILIKE $${idx} OR full_name ILIKE $${idx} OR mobile_phone ILIKE $${idx})`)
+    values.push(`%${options.search}%`)
+    idx++
+  }
+  if (options?.marital_status) {
+    whereClauses.push(`marital_status = $${idx}`)
+    values.push(options.marital_status)
+    idx++
+  }
+  if (options?.sex) {
+    whereClauses.push(`sex = $${idx}`)
+    values.push(options.sex)
+    idx++
+  }
+  if (options?.district) {
+    whereClauses.push(`district = $${idx}`)
+    values.push(options.district)
+    idx++
+  }
+  if (options?.province) {
+    whereClauses.push(`province = $${idx}`)
+    values.push(options.province)
+    idx++
+  }
+  if (options?.has_driving_license) {
+    whereClauses.push(`has_driving_license = $${idx}`)
+    values.push(options.has_driving_license === 'true')
+    idx++
+  }
+
+  let where = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : ''
+  let query = `SELECT * FROM students ${where} ORDER BY created_at DESC`
+
+  // If CSV export, return all rows (no limit)
+  const result = await sql(query, values)
+  return result
 }
 
 export async function getStudentById(id: number) {

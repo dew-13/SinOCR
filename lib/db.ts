@@ -562,3 +562,94 @@ export async function getPredictiveAnalytics() {
     },
   }
 }
+
+// Placement management
+export async function createPlacement(placementData: {
+  studentId: number
+  startDate: string
+  endDate: string
+  visaType: string
+  companyName: string
+  companyAddress: string
+  industry: string
+  residentAddress: string
+  emergencyContact: string
+  languageProficiency: string
+  photo?: string
+  createdBy: number
+}) {
+  console.log("createPlacement called with data:", placementData)
+  
+  // Start transaction
+  await sql`BEGIN`
+
+  try {
+    // Update student status to employed
+    console.log("Updating student status...")
+    await sql`
+      UPDATE students 
+      SET status = 'employed', updated_at = CURRENT_TIMESTAMP 
+      WHERE id = ${placementData.studentId}
+    `
+
+    // Insert placement record
+    console.log("Inserting placement record...")
+    const result = await sql`
+      INSERT INTO placements (
+        student_id, start_date, end_date, visa_type, company_name, 
+        company_address, industry, resident_address, emergency_contact, 
+        language_proficiency, photo
+      )
+      VALUES (
+        ${placementData.studentId}, ${placementData.startDate}, ${placementData.endDate}, 
+        ${placementData.visaType}, ${placementData.companyName}, ${placementData.companyAddress}, 
+        ${placementData.industry}, ${placementData.residentAddress}, ${placementData.emergencyContact}, 
+        ${placementData.languageProficiency}, ${placementData.photo || null}
+      )
+      RETURNING *
+    `
+
+    console.log("Placement created successfully:", result)
+    await sql`COMMIT`
+    return result
+  } catch (error) {
+    console.error("Error in createPlacement:", error)
+    await sql`ROLLBACK`
+    throw error
+  }
+}
+
+export async function getPlacements() {
+  return await sql`
+    SELECT 
+      p.*,
+      s.full_name as student_name,
+      s.national_id,
+      s.passport_id,
+      s.mobile_phone,
+      s.email_address,
+      (SELECT full_name FROM users WHERE id = s.created_by) as created_by_name
+    FROM placements p
+    JOIN students s ON p.student_id = s.id
+    ORDER BY p.start_date DESC
+  `
+}
+
+export async function getPlacementById(id: number) {
+  const result = await sql`
+    SELECT 
+      p.*,
+      s.full_name as student_name,
+      s.national_id,
+      s.mobile_phone,
+      s.email_address,
+      s.permanent_address,
+      s.district,
+      s.province,
+      (SELECT full_name FROM users WHERE id = s.created_by) as created_by_name
+    FROM placements p
+    JOIN students s ON p.student_id = s.id
+    WHERE p.placement_id = ${id}
+  `
+  return result[0]
+}

@@ -35,9 +35,15 @@ export default function Sidebar({ userRole, userName }: SidebarProps) {
   const roleParam = searchParams.get("role");
 
   const handleLogout = () => {
+    // Clear authentication data but preserve saved credentials for remember me
     localStorage.removeItem("token")
     localStorage.removeItem("user")
-    router.push("/login")
+    
+    // Clear any session storage
+    sessionStorage.clear()
+    
+    // Use window.location.href for more reliable navigation
+    window.location.href = "/login"
   }
 
   // Sidebar content based on role
@@ -46,10 +52,7 @@ export default function Sidebar({ userRole, userName }: SidebarProps) {
   if (userRole === "teacher") {
     sidebarContent = (
       <>
-        <SidebarGroup label="Main" color="from-blue-100 to-blue-50" fontColor="text-blue-900" noMargin={true}>
-          <SidebarLink href="/dashboard" icon={Home} label="Dashboard" pathname={pathname} setIsOpen={setIsOpen} />
-        </SidebarGroup>
-        <SidebarGroup label="Students" color="from-green-100 to-green-50" fontColor="text-green-900">
+        <SidebarGroup label="Students" color="from-green-100 to-green-50" fontColor="text-green-900" noMargin={true}>
           <SidebarLink href="/dashboard/students" icon={GraduationCap} label="Registered Students" pathname={pathname} setIsOpen={setIsOpen} />
           <SidebarLink href="/dashboard/employees" icon={Briefcase} label="Employed Students" pathname={pathname} setIsOpen={setIsOpen} />
         </SidebarGroup>
@@ -58,10 +61,7 @@ export default function Sidebar({ userRole, userName }: SidebarProps) {
   } else if (userRole === "admin") {
     sidebarContent = (
       <>
-        <SidebarGroup label="Main" color="from-blue-100 to-blue-50" fontColor="text-blue-900" noMargin={true}>
-          <SidebarLink href="/dashboard" icon={Home} label="Dashboard" pathname={pathname} setIsOpen={setIsOpen} />
-        </SidebarGroup>
-        <SidebarGroup label="Students" color="from-green-100 to-green-50" fontColor="text-green-900">
+        <SidebarGroup label="Students" color="from-green-100 to-green-50" fontColor="text-green-900" noMargin={true}>
           <SidebarLink href="/dashboard/students" icon={GraduationCap} label="Registered Students" pathname={pathname} setIsOpen={setIsOpen} />
           <SidebarLink href="/dashboard/students/add" icon={UserPlus} label="Add Students" pathname={pathname} setIsOpen={setIsOpen} />
           <SidebarLink href="/dashboard/employees" icon={Briefcase} label="Employed Students" pathname={pathname} setIsOpen={setIsOpen} />
@@ -76,10 +76,9 @@ export default function Sidebar({ userRole, userName }: SidebarProps) {
     sidebarContent = (
       <>
         <SidebarGroup label="Main" color="from-blue-100 to-blue-50" fontColor="text-blue-900" noMargin={true}>
-          <SidebarLink href="/dashboard" icon={Home} label="Dashboard" pathname={pathname} setIsOpen={setIsOpen} />
           <SidebarLink href="/dashboard/companies" icon={Building2} label="Companies" pathname={pathname} setIsOpen={setIsOpen} />
         </SidebarGroup>
-        <SidebarGroup label="Students" color="from-green-100 to-green-50" fontColor="text-green-900">
+        <SidebarGroup label="Students" color="from-green-100 to-green-50" fontColor="text-green-900" noMargin={true}>
           <SidebarLink href="/dashboard/students" icon={GraduationCap} label="Registered Students" pathname={pathname} setIsOpen={setIsOpen} />
           <SidebarLink href="/dashboard/students/add" icon={UserPlus} label="Add Students" pathname={pathname} setIsOpen={setIsOpen} />
           <SidebarLink href="/dashboard/employees" icon={Briefcase} label="Employed Students" pathname={pathname} setIsOpen={setIsOpen} />
@@ -97,10 +96,10 @@ export default function Sidebar({ userRole, userName }: SidebarProps) {
 
   // Always render the Analysis group with Post Analysis link
   const analysisGroup = (
-    <SidebarGroup label="Analysis" color="from-indigo-100 to-indigo-50" fontColor="text-indigo-900">
+    <SidebarGroup label="Analytics" color="from-indigo-100 to-indigo-50" fontColor="text-indigo-900">
       <SidebarLink href="/dashboard/analytics/descriptive" icon={BarChart3} label="Post Analysis" pathname={pathname} setIsOpen={setIsOpen} />
       {(userRole === "owner" || userRole === "developer") && (
-        <SidebarLink href="/dashboard/analytics/predictive" icon={BrainCircuit} label="Pre Analysis" pathname={pathname} setIsOpen={setIsOpen} />
+        <SidebarLink href="/dashboard/analytics/pre-analysis" icon={BrainCircuit} label="Pre Analysis" pathname={pathname} setIsOpen={setIsOpen} />
       )}
     </SidebarGroup>
   );

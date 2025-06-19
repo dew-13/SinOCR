@@ -68,12 +68,49 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
     otherQualifications: student?.other_qualifications || "",
     workExperience: student?.work_experience || "",
     workExperienceAbroad: student?.work_experience_abroad || "",
+    cvPhotoUrl: student?.cv_photo_url || null,
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError("")
+
+    // Validate required fields
+    const requiredFields = [
+      "fullName",
+      "permanentAddress",
+      "district",
+      "province",
+      "dateOfBirth",
+      "sex",
+      "maritalStatus",
+      "mobilePhone",
+      "educationQualification"
+    ]
+    for (const field of requiredFields) {
+      if (!formData[field] || (typeof formData[field] === "string" && formData[field].trim() === "")) {
+        setError("Please fill all required fields.")
+        setLoading(false)
+        return
+      }
+    }
+
+    // Ensure all optional fields are null if empty
+    const payload = {
+      ...formData,
+      nationalId: formData.nationalId || null,
+      passportId: formData.passportId || null,
+      passportExpiredDate: formData.passportExpiredDate || null,
+      spouseName: formData.spouseName || null,
+      whatsappNumber: formData.whatsappNumber || null,
+      vehicleType: formData.vehicleType || null,
+      emailAddress: formData.emailAddress || null,
+      otherQualifications: formData.otherQualifications || null,
+      workExperience: formData.workExperience || null,
+      workExperienceAbroad: formData.workExperienceAbroad || null,
+      cvPhotoUrl: formData.cvPhotoUrl || null,
+    }
 
     try {
       const token = localStorage.getItem("token")
@@ -86,7 +123,7 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       })
 
       const data = await response.json()

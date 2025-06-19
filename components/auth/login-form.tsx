@@ -16,6 +16,7 @@ export default function LoginForm() {
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
+  const [credentialsLoaded, setCredentialsLoaded] = useState(false)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -26,14 +27,23 @@ export default function LoginForm() {
     if (savedCredentials) {
       try {
         const { email: savedEmail, password: savedPassword } = JSON.parse(savedCredentials)
-        setEmail(savedEmail || "")
-        setPassword(savedPassword || "")
-        setRememberMe(true)
+        if (savedEmail && savedPassword) {
+          setEmail(savedEmail)
+          setPassword(savedPassword)
+          setRememberMe(true)
+          setCredentialsLoaded(true)
+          console.log("Loaded saved credentials")
+        } else {
+          console.log("Saved credentials are incomplete, clearing them")
+          localStorage.removeItem("savedCredentials")
+        }
       } catch (error) {
         console.error("Error loading saved credentials:", error)
         // Clear corrupted data
         localStorage.removeItem("savedCredentials")
       }
+    } else {
+      console.log("No saved credentials found")
     }
   }, [])
 
@@ -55,14 +65,22 @@ export default function LoginForm() {
         // Save credentials if remember me is checked
         if (rememberMe) {
           localStorage.setItem("savedCredentials", JSON.stringify({ email, password }))
+          console.log("Credentials saved for remember me")
         } else {
           // Clear saved credentials if remember me is unchecked
           localStorage.removeItem("savedCredentials")
+          console.log("Credentials cleared - remember me unchecked")
         }
 
         localStorage.setItem("token", data.token)
         localStorage.setItem("user", JSON.stringify(data.user))
-        router.push("/dashboard")
+        
+        // Redirect based on user role
+        if (data.user.role === "admin" || data.user.role === "teacher") {
+          router.push("/dashboard/students")
+        } else {
+          router.push("/dashboard")
+        }
       } else {
         setError(data.error || "Login failed")
       }
@@ -71,6 +89,44 @@ export default function LoginForm() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleRememberMeChange = (checked: boolean | string) => {
+    const isChecked = checked === true || checked === "checked"
+    setRememberMe(isChecked)
+    console.log("Remember me changed to:", isChecked)
+    
+    // If user unchecks remember me, clear saved credentials
+    if (!isChecked) {
+      localStorage.removeItem("savedCredentials")
+      setCredentialsLoaded(false)
+      console.log("Cleared saved credentials - remember me unchecked")
+    }
+  }
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value)
+    // If user manually changes email, clear the loaded indicator
+    if (credentialsLoaded) {
+      setCredentialsLoaded(false)
+    }
+  }
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value)
+    // If user manually changes password, clear the loaded indicator
+    if (credentialsLoaded) {
+      setCredentialsLoaded(false)
+    }
+  }
+
+  const clearSavedCredentials = () => {
+    localStorage.removeItem("savedCredentials")
+    setEmail("")
+    setPassword("")
+    setRememberMe(false)
+    setCredentialsLoaded(false)
+    console.log("Cleared all saved credentials")
   }
 
   return (
@@ -101,7 +157,7 @@ export default function LoginForm() {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={handleEmailChange}
                 placeholder="Enter your email"
                 required
                 disabled={loading}
@@ -116,7 +172,7 @@ export default function LoginForm() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={handlePasswordChange}
                   placeholder="Enter your password"
                   required
                   disabled={loading}
@@ -139,7 +195,7 @@ export default function LoginForm() {
               <Checkbox
                 id="rememberMe"
                 checked={rememberMe}
-                onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                onCheckedChange={handleRememberMeChange}
                 disabled={loading}
               />
               <Label
@@ -149,6 +205,19 @@ export default function LoginForm() {
                 Remember me
               </Label>
             </div>
+            
+            {credentialsLoaded && (
+              <div className="text-xs text-green-600 bg-green-50 p-2 rounded-md">
+                ✓ Credentials loaded from previous session
+                <button
+                  type="button"
+                  onClick={clearSavedCredentials}
+                  className="ml-2 text-red-600 hover:text-red-800 underline"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
 
             <Button type="submit" className="w-full h-11" disabled={loading}>
               {loading ? (

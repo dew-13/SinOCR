@@ -27,6 +27,12 @@ export default function DashboardLayout({
     try {
       const parsedUser = JSON.parse(userData)
       setUser(parsedUser)
+      
+      // Redirect admin and teacher users to registered students page
+      if ((parsedUser.role === "admin" || parsedUser.role === "teacher") && window.location.pathname === "/dashboard") {
+        router.push("/dashboard/students")
+        return
+      }
     } catch (error) {
       console.error("Error parsing user data:", error)
       router.push("/login")

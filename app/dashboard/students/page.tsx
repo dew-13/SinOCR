@@ -384,11 +384,6 @@ export default function StudentsPage() {
                 <div className="flex items-center gap-2">
                   <Badge variant={student.status === "employed" ? "default" : "secondary"}>{student.status}</Badge>
                   <div className="flex gap-2">
-                    <Link href={`/dashboard/students/${student.id}`}>
-                      <Button variant="outline" size="sm">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </Link>
                     {user && hasPermission(user.role, "UPDATE_STUDENT") && (
                       <Link href={`/dashboard/students/${student.id}/edit`}>
                         <Button variant="outline" size="sm">

@@ -121,13 +121,6 @@ export default function EmployeesPage() {
                     </CardDescription>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Link href={`/dashboard/employees/${placement.placement_id}`}>
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                </div>
               </div>
             </CardHeader>
             <CardContent>

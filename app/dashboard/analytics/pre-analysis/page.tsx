@@ -82,10 +82,10 @@ export default function PreAnalysisPage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-          Pre Analysis (Predictive)
+          
         </h1>
         <p className="text-muted-foreground mt-2">
-          AI-powered predictive insights, employment probability analysis, and strategic recommendations
+         
         </p>
       </div>
 

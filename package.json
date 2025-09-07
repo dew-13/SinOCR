@@ -35,12 +35,14 @@
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.294.0",
     "next": "14.0.4",
+    "ocr-space-api-wrapper": "^2.4.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-simple-maps": "^3.0.0",
     "recharts": "^2.8.0",
     "tailwind-merge": "^2.0.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "tesseract.js": "^6.0.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Camera } from "lucide-react"
+import { Camera, Loader2 } from "lucide-react"
 
 const provinces = [
   "Western",
@@ -73,6 +73,7 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [ocrError, setOcrError] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [formData, setFormData] = useState<StudentFormData>({
     fullName: student?.full_name || "",
@@ -103,25 +104,19 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
   // Email validation state
   const [emailError, setEmailError] = useState("");
 
-  /**
-   * Handles the image upload event.
-   * - Sends the image to the OCR API endpoint.
-   * - Receives processed and mapped student data.
-   * - Updates the form state to autofill fields.
-   */
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file) return
 
     setLoading(true)
     setError("")
+    setOcrError("")
 
     const uploadFormData = new FormData()
     uploadFormData.append("image", file)
 
     try {
-      // API call to the OCR processing endpoint
-      const response = await fetch("/api/ocr", {
+      const response = await fetch("http://localhost:5000/predict", {
         method: "POST",
         body: uploadFormData,
       })
@@ -129,16 +124,47 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
       const data = await response.json()
 
       if (response.ok) {
-        // Autofill form with data received from the API
+        const text = data.text;
+        const lines = text.split('\n');
+        
+        const extractedData: Partial<StudentFormData> = {};
+
+        const sinhalaToEnglish = {
+          "සම්පූර්ණ නම": "fullName",
+          "ස්ථීර ලිපිනය": "permanentAddress",
+          "පළාත": "province",
+          "දිස්ත්‍රික්කය": "district",
+          "උපන් දිනය": "dateOfBirth",
+          "ජාතික හැදුනුම්පත් අංකය": "nationalId",
+          "විදේශ ගමන් බලපත්‍ර අංකය": "passportId",
+          "කල් ඉකුත්වන දිනය": "passportExpiredDate",
+          "ස්ත්‍රී පුරුෂ භාවය": "sex",
+          "විවාහක / අවිවාහක බව": "maritalStatus",
+          "විවාහ වූ අයගේ නම": "spouseName",
+          "දරුවන් සංඛ්‍යාව": "numberOfChildren",
+          "දුරකථන අංකය": "mobilePhone",
+          "ඊ-මේල් ලිපිනය": "emailAddress",
+        };
+
+        lines.forEach((line: string) => {
+          for (const [sinhala, english] of Object.entries(sinhalaToEnglish)) {
+            if (line.includes(sinhala)) {
+              const key = english as keyof StudentFormData;
+              (extractedData as any)[key] = line.replace(sinhala, "").trim();
+              break; 
+            }
+          }
+        });
+
         setFormData((prev) => ({
           ...prev,
-          ...data.studentData,
+          ...extractedData
         }))
       } else {
-        setError(data.error || "Failed to process image.")
+        setOcrError(data.error || "Failed to process image.")
       }
     } catch (error) {
-      setError("Network error during image upload. Please try again.")
+      setOcrError("Could not connect to OCR server. Is it running?")
     } finally {
       setLoading(false)
     }
@@ -343,7 +369,12 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
           {!isEdit && (
             <div>
               <Button type="button" onClick={() => fileInputRef.current?.click()} disabled={loading}>
-                <Camera className="mr-2 h-4 w-4" /> Import from Document
+                {loading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Camera className="mr-2 h-4 w-4" />
+                )}
+                {loading ? "Processing..." : "Import from Document"}
               </Button>
               <input
                 type="file"
@@ -352,6 +383,9 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
                 className="hidden"
                 accept="image/*"
               />
+              {ocrError && (
+                <div className="mt-2 text-red-500 text-sm">{ocrError}</div>
+              )}
             </div>
           )}
         </div>

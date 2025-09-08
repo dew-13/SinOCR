@@ -168,10 +168,10 @@ export default function AnalyticsOverviewPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Brain className="h-5 w-5 text-purple-500" />
-              Pre Analysis (Predictive)
+             
             </CardTitle>
             <CardDescription>
-              AI-powered predictions and future insights
+       
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

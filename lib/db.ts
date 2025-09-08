@@ -205,7 +205,7 @@ export async function createStudent(studentData: any) {
       full_name, permanent_address, district, province, date_of_birth,
       national_id, passport_id, passport_expired_date, sex, marital_status,
       spouse_name, number_of_children, mobile_phone, whatsapp_number,
-      has_driving_license, vehicle_type, email_address, education_qualification,
+      has_driving_license, vehicle_type, email_address, education_ol, education_al,
       other_qualifications, work_experience, work_experience_abroad, cv_photo_url, created_by
     ) VALUES (
       ${studentData.fullName}, ${studentData.permanentAddress}, ${studentData.district}, 
@@ -213,7 +213,7 @@ export async function createStudent(studentData: any) {
       ${studentData.passportId}, ${studentData.passportExpiredDate}, ${studentData.sex},
       ${studentData.maritalStatus}, ${studentData.spouseName}, ${studentData.numberOfChildren},
       ${studentData.mobilePhone}, ${studentData.whatsappNumber}, ${studentData.hasDrivingLicense},
-      ${studentData.vehicleType}, ${studentData.emailAddress}, ${studentData.educationQualification},
+      ${studentData.vehicleType}, ${studentData.emailAddress}, ${studentData.educationOL}, ${studentData.educationAL},
       ${studentData.otherQualifications}, ${studentData.workExperience}, 
       ${studentData.workExperienceAbroad}, ${studentData.cvPhotoUrl}, ${studentData.createdBy}
     )
@@ -241,7 +241,8 @@ export async function updateStudent(id: number, studentData: any) {
       has_driving_license = ${studentData.hasDrivingLicense},
       vehicle_type = ${studentData.vehicleType},
       email_address = ${studentData.emailAddress},
-      education_qualification = ${studentData.educationQualification},
+      education_ol = ${studentData.educationOL},
+      education_al = ${studentData.educationAL},
       other_qualifications = ${studentData.otherQualifications},
       work_experience = ${studentData.workExperience},
       work_experience_abroad = ${studentData.workExperienceAbroad},

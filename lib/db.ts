@@ -663,3 +663,10 @@ export async function getPlacementById(id: number) {
   `
   return result[0]
 }
+
+// Update student status
+export async function updateStudentStatus(id: string, status: string) {
+  return await sql`
+    UPDATE students SET status = ${status}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id} RETURNING *
+  `;
+}

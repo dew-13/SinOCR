@@ -1,4 +1,15 @@
 "use client";
+// Check if Student ID already exists before submitting (frontend validation)
+const checkStudentIdExists = async (studentId: string) => {
+  try {
+    const response = await fetch(`/api/students?studentId=${encodeURIComponent(studentId)}`);
+    if (!response.ok) return false;
+    const data = await response.json();
+    return data && data.exists;
+  } catch {
+    return false;
+  }
+};
 import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -10,6 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Camera, Loader2 } from "lucide-react";
+import { generateStudentPdf } from "@/lib/generateStudentPdf";
 
 const provinces = [
   "Western",
@@ -36,8 +48,7 @@ const districts = {
 };
 
 interface StudentFormData {
-  expectedJobCategory: string;
-  expectedSubJobCategory: string;
+  expectedJobCategory?: string;
   studentId: string;
   fullName: string;
   permanentAddress: string;
@@ -75,7 +86,7 @@ interface StudentFormProps {
 export default function StudentForm({ student, isEdit = false }: StudentFormProps) {
   // Validate required fields before submit
   const requiredFields: (keyof StudentFormData)[] = [
-    "studentId", "fullName", "permanentAddress", "district", "province", "dateOfBirth", "nationalId", "sex", "maritalStatus", "mobilePhone", "whatsappNumber", "guardianName", "guardianContact", "emailAddress", "workExperience", "workExperienceAbroad", "expectedJobCategory", "expectedSubJobCategory"
+    "studentId", "fullName", "permanentAddress", "district", "province", "dateOfBirth", "nationalId", "sex", "maritalStatus", "mobilePhone", "whatsappNumber", "guardianName", "guardianContact", "emailAddress", "expectedJobCategory"
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,11 +109,23 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
       return;
     }
 
+    // Check for duplicate Student ID (only on add, not edit)
+    if (!isEdit) {
+      const exists = await checkStudentIdExists(formData.studentId);
+      if (exists) {
+        setError("Student ID already exists. Please use a different ID.");
+        setLoading(false);
+        return;
+      }
+    }
+
     // Prepare payload
     const payload = {
       ...formData,
       mobilePhone: formData.mobilePhone ? `+94${formData.mobilePhone}` : null,
       whatsappNumber: formData.whatsappNumber ? `+94${formData.whatsappNumber}` : null,
+      dateOfBirth: formData.dateOfBirth && formData.dateOfBirth.trim() !== "" ? formData.dateOfBirth : null,
+      passportExpiredDate: formData.passportExpiredDate && formData.passportExpiredDate.trim() !== "" ? formData.passportExpiredDate : null,
     };
 
     try {
@@ -195,12 +218,23 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
     workExperienceAbroad: student?.work_experience_abroad || "",
     cvPhotoUrl: student?.cv_photo_url || null,
     studentId: student?.student_id || "",
-    expectedJobCategory: student?.expected_job_category || "",
-    expectedSubJobCategory: student?.expected_sub_job_category || "",
+  expectedJobCategory: student?.expected_job_category || "",
     status: student?.status || "Pending",
     guardianName: student?.guardian_name || "",
     guardianContact: student?.guardian_contact || "",
   });
+
+  // Save button handler: generate PDF and prompt user to save
+  const handleSavePdf = () => {
+    const doc = generateStudentPdf(formData);
+    if (doc && typeof doc.save === "function") {
+      // Sanitize filename: remove spaces and special chars from name
+      const safeName = (formData.fullName || "").replace(/[^a-zA-Z0-9]/g, "_");
+      const safeId = (formData.studentId || "").replace(/[^a-zA-Z0-9]/g, "_");
+      const filename = `${safeId}_${safeName}.pdf`;
+      doc.save(filename);
+    }
+  };
 
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -260,14 +294,26 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
               </CardDescription>
             </div>
             {!isEdit && (
-              <div>
-                <Button type="button" onClick={() => fileInputRef.current?.click()} disabled={loading}>
+              <div className="flex items-center space-x-2">
+                <Button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={loading}
+                  className="h-10"
+                >
                   {loading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
                     <Camera className="mr-2 h-4 w-4" />
                   )}
                   {loading ? "Processing..." : "Import from Document"}
+                </Button>
+                <Button
+                  type="button"
+                  className="h-10"
+                  onClick={handleSavePdf}
+                >
+                  Save
                 </Button>
                 <input
                   type="file"
@@ -579,35 +625,9 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
             <div className="mb-4 flex flex-col md:flex-row gap-4">
               <div className="flex-1">
                 <Label htmlFor="expectedJobCategory">Expected Job Category *</Label>
-                <Select value={formData.expectedJobCategory} onValueChange={(value) => handleInputChange("expectedJobCategory", value)}>
+                <Select value={formData.expectedJobCategory || ""} onValueChange={(value) => handleInputChange("expectedJobCategory", value)} required>
                   <SelectTrigger>
                     <SelectValue placeholder="Select job category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Nursing care">Nursing care</SelectItem>
-                    <SelectItem value="Building Cleaning">Building Cleaning</SelectItem>
-                    <SelectItem value="Industrial manufacturing">Industrial manufacturing</SelectItem>
-                    <SelectItem value="Construction">Construction</SelectItem>
-                    <SelectItem value="Shipbuilding and Marine Industry">Shipbuilding and Marine Industry</SelectItem>
-                    <SelectItem value="Automobile Maintenance">Automobile Maintenance</SelectItem>
-                    <SelectItem value="Aviation">Aviation</SelectItem>
-                    <SelectItem value="Accommodation">Accommodation</SelectItem>
-                    <SelectItem value="Automobile transport industry">Automobile transport industry</SelectItem>
-                    <SelectItem value="Railway">Railway</SelectItem>
-                    <SelectItem value="Agriculture">Agriculture</SelectItem>
-                    <SelectItem value="Fisheries">Fisheries</SelectItem>
-                    <SelectItem value="Food and beverage manufacturing">Food and beverage manufacturing</SelectItem>
-                    <SelectItem value="Food service">Food service</SelectItem>
-                    <SelectItem value="Forestry">Forestry</SelectItem>
-                    <SelectItem value="Timber Industry">Timber Industry</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex-1">
-                <Label htmlFor="expectedSubJobCategory">Expected Sub Job Category *</Label>
-                <Select value={formData.expectedSubJobCategory} onValueChange={(value) => handleInputChange("expectedSubJobCategory", value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select sub job category" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Nursing care">Nursing care</SelectItem>

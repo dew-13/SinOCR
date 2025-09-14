@@ -55,6 +55,10 @@
   }
   body {
     @apply bg-background text-foreground;
+    overflow: hidden; /* Prevent body scroll */
+  }
+  html {
+    overflow: hidden; /* Prevent html scroll */
   }
 }
 

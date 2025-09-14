@@ -110,7 +110,13 @@ export default function StudentsPage() {
       })
       if (response.ok) {
         const data = await response.json()
-        setStudents(data)
+        // Sort students by full_name in ascending order
+        const sortedStudents = data.sort((a: any, b: any) => {
+          const nameA = (a.full_name || '').toLowerCase()
+          const nameB = (b.full_name || '').toLowerCase()
+          return nameA.localeCompare(nameB)
+        })
+        setStudents(sortedStudents)
       }
     } catch (error) {
       console.error("Failed to fetch students:", error)
@@ -163,7 +169,13 @@ export default function StudentsPage() {
       throw new Error('Failed to fetch students')
     })
     .then(data => {
-      setStudents(data)
+      // Sort students by full_name in ascending order
+      const sortedStudents = data.sort((a: any, b: any) => {
+        const nameA = (a.full_name || '').toLowerCase()
+        const nameB = (b.full_name || '').toLowerCase()
+        return nameA.localeCompare(nameB)
+      })
+      setStudents(sortedStudents)
     })
     .catch(error => {
       console.error("Failed to fetch students:", error)

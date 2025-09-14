@@ -336,7 +336,7 @@ export default function AnalyticsOverviewPage() {
           <CardDescription>Access detailed analytics and reports</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Button 
               variant="outline" 
               className="h-20 flex flex-col items-center justify-center space-y-2"
@@ -353,6 +353,15 @@ export default function AnalyticsOverviewPage() {
             >
               <BarChart3 className="h-6 w-6" />
               <span>Historical Analysis</span>
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="h-20 flex flex-col items-center justify-center space-y-2"
+              onClick={() => router.push('/dashboard/analytics/comparison')}
+            >
+              <Target className="h-6 w-6" />
+              <span>Comparison Analysis</span>
             </Button>
             
             <Button 

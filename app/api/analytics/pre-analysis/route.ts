@@ -1,63 +1,57 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { verifyToken } from "@/lib/auth"
-import { sql } from "@/lib/db"
-import { hasPermission } from "@/lib/permissions"
+import { verifyToken } from "@/lib/auth";
+import { sql } from "@/lib/db";
+import { hasPermission } from "@/lib/permissions";
 
-export async function GET(request: NextRequest) {
+export async function GET(request: Request) {
   try {
-    const token = request.headers.get("authorization")?.replace("Bearer ", "")
-
+    const token = request.headers.get("authorization")?.replace("Bearer ", "");
     if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    const decoded = verifyToken(token)
+    const decoded = verifyToken(token);
     if (!decoded) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
     }
-
     if (!hasPermission(decoded.role, "VIEW_PREDICTIVE_ANALYTICS")) {
-      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 })
+      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
     }
 
-    // Fetch comprehensive pre-analysis data based on actual database tables
+    // First, let's get basic data to test what columns exist
+    console.log("Testing database connection...");
+    
+    // Simple test query to see what columns exist
+    const testQuery = await sql`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'students' 
+      ORDER BY ordinal_position
+    `;
+    
+    console.log("Available columns in students table:", testQuery.map(col => col.column_name));
+
+    // Enhanced queries using actual database columns
     const [
-      employmentProbability,
+      basicStats,
       employmentProgress,
-      marketTrends,
-      skillDemand,
-      seasonalPatterns,
-      districtPotential,
+      districtData,
+      educationAnalysis,
+      experienceAnalysis,
       ageAnalysis,
-      qualificationImpact,
-      experienceCorrelation,
+      seasonalPatterns,
+      companyData,
       futureProjections,
-      riskAssessment,
-      marketingInsights,
-      companyPerformance,
-      geographicDistribution
+      riskAssessment
     ] = await Promise.all([
-      // Employment Probability Analysis based on actual data
+      // Basic student statistics
       sql`
         SELECT 
-          s.education_qualification,
-          s.district,
-          s.sex,
-          s.marital_status,
-          s.has_driving_license,
           COUNT(*) as total_students,
-          COUNT(CASE WHEN s.status = 'employed' THEN 1 END) as employed_students,
-          ROUND(
-            (COUNT(CASE WHEN s.status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
-          ) as employment_rate
-        FROM students s
-        GROUP BY s.education_qualification, s.district, s.sex, s.marital_status, s.has_driving_license
-        HAVING COUNT(*) >= 2
-        ORDER BY employment_rate DESC
-        LIMIT 20
+          COUNT(CASE WHEN status = 'employed' THEN 1 END) as employed_students,
+          COUNT(CASE WHEN status = 'active' THEN 1 END) as active_students
+        FROM students
       `,
 
-      // Employment Progress Tracking
+      // Employment progress from employees table
       sql`
         SELECT 
           DATE_TRUNC('month', e.employment_date) as month,
@@ -65,185 +59,105 @@ export async function GET(request: NextRequest) {
           COUNT(DISTINCT e.company_id) as companies_hired,
           COUNT(DISTINCT e.student_id) as students_employed
         FROM employees e
-        WHERE e.employment_date >= CURRENT_DATE - INTERVAL '24 months'
+        WHERE e.employment_date >= CURRENT_DATE - INTERVAL '12 months'
         GROUP BY DATE_TRUNC('month', e.employment_date)
         ORDER BY month DESC
+        LIMIT 12
       `,
 
-      // Market Trends Analysis based on actual employment data
+      // District analysis using available columns
       sql`
         SELECT 
-          c.industry,
-          c.country,
-          COUNT(e.id) as total_employments,
-          COUNT(DISTINCT e.student_id) as unique_students,
-          COUNT(DISTINCT e.company_id) as companies_involved,
-          MIN(e.employment_date) as first_employment,
-          MAX(e.employment_date) as latest_employment
-        FROM employees e
-        JOIN companies c ON e.company_id = c.id
-        WHERE e.employment_date >= CURRENT_DATE - INTERVAL '36 months'
-        GROUP BY c.industry, c.country
-        HAVING COUNT(e.id) >= 1
-        ORDER BY total_employments DESC
-      `,
-
-      // Skill Demand Analysis based on actual qualifications and employment
-      sql`
-        SELECT 
-          s.education_qualification,
-          s.other_qualifications,
+          district,
+          province,
           COUNT(*) as total_students,
-          COUNT(CASE WHEN s.status = 'employed' THEN 1 END) as employed_count,
+          COUNT(CASE WHEN status = 'employed' THEN 1 END) as employed_students,
           ROUND(
-            (COUNT(CASE WHEN s.status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
-          ) as demand_rate
-        FROM students s
-        WHERE s.other_qualifications IS NOT NULL AND s.other_qualifications != ''
-        GROUP BY s.education_qualification, s.other_qualifications
-        HAVING COUNT(*) >= 2
-        ORDER BY demand_rate DESC
+            (COUNT(CASE WHEN status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
+          ) as employment_rate,
+          AVG(EXTRACT(YEAR FROM CURRENT_DATE) - EXTRACT(YEAR FROM date_of_birth)) as avg_age
+        FROM students
+        WHERE district IS NOT NULL
+        GROUP BY district, province
+        HAVING COUNT(*) >= 1
+        ORDER BY employment_rate DESC
         LIMIT 15
       `,
 
-      // Seasonal Patterns based on actual registration and employment data
-      sql`
-        SELECT 
-          EXTRACT(MONTH FROM s.created_at) as month,
-          EXTRACT(YEAR FROM s.created_at) as year,
-          COUNT(*) as registrations,
-          COUNT(CASE WHEN s.status = 'employed' THEN 1 END) as employments
-        FROM students s
-        WHERE s.created_at >= CURRENT_DATE - INTERVAL '36 months'
-        GROUP BY EXTRACT(MONTH FROM s.created_at), EXTRACT(YEAR FROM s.created_at)
-        ORDER BY year DESC, month DESC
-      `,
-
-      // District Potential Analysis based on actual data
-      sql`
-        SELECT 
-          s.district,
-          s.province,
-          COUNT(*) as total_students,
-          COUNT(CASE WHEN s.status = 'employed' THEN 1 END) as employed_students,
-          ROUND(
-            (COUNT(CASE WHEN s.status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
-          ) as employment_rate,
-          AVG(EXTRACT(YEAR FROM CURRENT_DATE) - EXTRACT(YEAR FROM s.date_of_birth)) as avg_age
-        FROM students s
-        GROUP BY s.district, s.province
-        HAVING COUNT(*) >= 3
-        ORDER BY employment_rate DESC
-      `,
-
-      // Age Analysis based on actual student data
+      // Education analysis using education_ol and education_al
       sql`
         SELECT 
           CASE 
-            WHEN EXTRACT(YEAR FROM CURRENT_DATE) - EXTRACT(YEAR FROM s.date_of_birth) < 25 THEN '18-24'
-            WHEN EXTRACT(YEAR FROM CURRENT_DATE) - EXTRACT(YEAR FROM s.date_of_birth) < 30 THEN '25-29'
-            WHEN EXTRACT(YEAR FROM CURRENT_DATE) - EXTRACT(YEAR FROM s.date_of_birth) < 35 THEN '30-34'
-            ELSE '35+'
-          END as age_group,
+            WHEN education_ol = true AND education_al = true THEN 'Both O/L & A/L'
+            WHEN education_ol = true THEN 'O/L Only'
+            WHEN education_al = true THEN 'A/L Only'
+            ELSE 'Other Qualification'
+          END as education_level,
           COUNT(*) as total_students,
-          COUNT(CASE WHEN s.status = 'employed' THEN 1 END) as employed_students,
+          COUNT(CASE WHEN status = 'employed' THEN 1 END) as employed_students,
           ROUND(
-            (COUNT(CASE WHEN s.status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
+            (COUNT(CASE WHEN status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
           ) as employment_rate
-        FROM students s
-        GROUP BY age_group
-        ORDER BY age_group
-      `,
-
-      // Qualification Impact based on actual employment data
-      sql`
-        SELECT 
-          s.education_qualification,
-          COUNT(*) as total_students,
-          COUNT(CASE WHEN s.status = 'employed' THEN 1 END) as employed_students,
-          ROUND(
-            (COUNT(CASE WHEN s.status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
-          ) as employment_rate
-        FROM students s
-        GROUP BY s.education_qualification
-        HAVING COUNT(*) >= 2
+        FROM students
+        GROUP BY education_level
+        HAVING COUNT(*) >= 1
         ORDER BY employment_rate DESC
       `,
 
-      // Experience Correlation based on actual work experience data
+      // Work experience analysis
       sql`
         SELECT 
           CASE 
-            WHEN s.work_experience LIKE '%year%' OR s.work_experience LIKE '%years%' THEN 'Experienced'
-            WHEN s.work_experience LIKE '%month%' OR s.work_experience LIKE '%months%' THEN 'Some Experience'
-            WHEN s.work_experience IS NULL OR s.work_experience = '' THEN 'No Experience'
-            ELSE 'Other'
+            WHEN work_experience IS NULL OR work_experience = '' THEN 'No Experience'
+            WHEN work_experience ILIKE '%year%' THEN 'Experienced (1+ years)'
+            WHEN work_experience ILIKE '%month%' THEN 'Some Experience (< 1 year)'
+            ELSE 'Other Experience'
           END as experience_level,
           COUNT(*) as total_students,
-          COUNT(CASE WHEN s.status = 'employed' THEN 1 END) as employed_students,
+          COUNT(CASE WHEN status = 'employed' THEN 1 END) as employed_students,
           ROUND(
-            (COUNT(CASE WHEN s.status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
+            (COUNT(CASE WHEN status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
           ) as employment_rate
-        FROM students s
+        FROM students
         GROUP BY experience_level
         ORDER BY employment_rate DESC
       `,
 
-      // Future Projections based on actual historical trends
+      // Age group analysis
       sql`
         SELECT 
-          DATE_TRUNC('month', s.created_at) as month,
-          COUNT(*) as registrations,
-          LAG(COUNT(*)) OVER (ORDER BY DATE_TRUNC('month', s.created_at)) as prev_month,
-          ROUND(
-            ((COUNT(*) - LAG(COUNT(*)) OVER (ORDER BY DATE_TRUNC('month', s.created_at)))::DECIMAL / 
-             NULLIF(LAG(COUNT(*)) OVER (ORDER BY DATE_TRUNC('month', s.created_at)), 0)) * 100, 2
-          ) as growth_rate
-        FROM students s
-        WHERE s.created_at >= CURRENT_DATE - INTERVAL '12 months'
-        GROUP BY DATE_TRUNC('month', s.created_at)
-        ORDER BY month DESC
-        LIMIT 6
-      `,
-
-      // Risk Assessment based on actual employment rates
-      sql`
-        SELECT 
-          s.district,
-          COUNT(*) as total_students,
-          COUNT(CASE WHEN s.status = 'employed' THEN 1 END) as employed_students,
-          ROUND(
-            (COUNT(CASE WHEN s.status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
-          ) as employment_rate,
           CASE 
-            WHEN (COUNT(CASE WHEN s.status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) < 0.3 THEN 'High Risk'
-            WHEN (COUNT(CASE WHEN s.status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) < 0.6 THEN 'Medium Risk'
-            ELSE 'Low Risk'
-          END as risk_level
-        FROM students s
-        GROUP BY s.district
-        HAVING COUNT(*) >= 3
-        ORDER BY employment_rate ASC
+            WHEN EXTRACT(YEAR FROM CURRENT_DATE) - EXTRACT(YEAR FROM date_of_birth) < 25 THEN '18-24'
+            WHEN EXTRACT(YEAR FROM CURRENT_DATE) - EXTRACT(YEAR FROM date_of_birth) < 30 THEN '25-29'
+            WHEN EXTRACT(YEAR FROM CURRENT_DATE) - EXTRACT(YEAR FROM date_of_birth) < 35 THEN '30-34'
+            ELSE '35+'
+          END as age_group,
+          COUNT(*) as total_students,
+          COUNT(CASE WHEN status = 'employed' THEN 1 END) as employed_students,
+          ROUND(
+            (COUNT(CASE WHEN status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
+          ) as employment_rate
+        FROM students
+        WHERE date_of_birth IS NOT NULL
+        GROUP BY age_group
+        ORDER BY age_group
       `,
 
-      // Marketing Insights based on actual data patterns
+      // Seasonal registration patterns
       sql`
         SELECT 
-          'High Potential Districts' as insight_type,
-          s.district as target_area,
-          COUNT(*) as student_count,
-          ROUND(
-            (COUNT(CASE WHEN s.status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
-          ) as success_rate,
-          'High employment success rate indicates strong market demand' as reasoning
-        FROM students s
-        GROUP BY s.district
-        HAVING COUNT(*) >= 5 AND (COUNT(CASE WHEN s.status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) > 0.7
-        ORDER BY success_rate DESC
-        LIMIT 5
+          EXTRACT(MONTH FROM created_at) as month,
+          EXTRACT(YEAR FROM created_at) as year,
+          COUNT(*) as registrations,
+          COUNT(CASE WHEN status = 'employed' THEN 1 END) as employments
+        FROM students
+        WHERE created_at >= CURRENT_DATE - INTERVAL '24 months'
+        GROUP BY EXTRACT(MONTH FROM created_at), EXTRACT(YEAR FROM created_at)
+        ORDER BY year DESC, month DESC
+        LIMIT 24
       `,
 
-      // Company Performance Analysis
+      // Company performance data
       sql`
         SELECT 
           c.company_name,
@@ -252,110 +166,196 @@ export async function GET(request: NextRequest) {
           COUNT(e.id) as total_employments,
           COUNT(DISTINCT e.student_id) as unique_students,
           MIN(e.employment_date) as first_hire_date,
-          MAX(e.employment_date) as latest_hire_date,
-          ROUND(
-            (COUNT(e.id)::DECIMAL / (SELECT COUNT(*) FROM students WHERE status = 'employed')) * 100, 2
-          ) as market_share
+          MAX(e.employment_date) as latest_hire_date
         FROM companies c
         LEFT JOIN employees e ON c.id = e.company_id
+        WHERE e.employment_date >= CURRENT_DATE - INTERVAL '12 months'
         GROUP BY c.id, c.company_name, c.industry, c.country
         HAVING COUNT(e.id) > 0
         ORDER BY total_employments DESC
-        LIMIT 10
+        LIMIT 8
       `,
 
-      // Geographic Distribution for marketing insights
+      // Future growth projections
       sql`
         SELECT 
-          s.district,
-          s.province,
+          DATE_TRUNC('month', created_at) as month,
+          COUNT(*) as registrations,
+          LAG(COUNT(*)) OVER (ORDER BY DATE_TRUNC('month', created_at)) as prev_month
+        FROM students
+        WHERE created_at >= CURRENT_DATE - INTERVAL '6 months'
+        GROUP BY DATE_TRUNC('month', created_at)
+        ORDER BY month DESC
+        LIMIT 6
+      `,
+
+      // Risk assessment
+      sql`
+        SELECT 
+          district,
           COUNT(*) as total_students,
-          COUNT(CASE WHEN s.status = 'employed' THEN 1 END) as employed_students,
+          COUNT(CASE WHEN status = 'employed' THEN 1 END) as employed_students,
           ROUND(
-            (COUNT(CASE WHEN s.status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
+            (COUNT(CASE WHEN status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
           ) as employment_rate,
-          COUNT(CASE WHEN s.status = 'active' THEN 1 END) as active_students
-        FROM students s
-        GROUP BY s.district, s.province
-        ORDER BY employment_rate DESC
+          CASE 
+            WHEN (COUNT(CASE WHEN status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) < 30 THEN 'High Risk'
+            WHEN (COUNT(CASE WHEN status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) < 60 THEN 'Medium Risk'
+            ELSE 'Low Risk'
+          END as risk_level
+        FROM students
+        WHERE district IS NOT NULL
+        GROUP BY district
+        HAVING COUNT(*) >= 2
+        ORDER BY employment_rate ASC
+        LIMIT 10
       `
-    ])
+    ]);
 
-    // Calculate AI-powered insights based on actual data
-    const totalStudents = employmentProbability.reduce((sum: number, row: any) => sum + Number(row.total_students), 0)
-    const totalEmployed = employmentProbability.reduce((sum: number, row: any) => sum + Number(row.employed_students), 0)
-    const overallEmploymentRate = totalStudents > 0 ? (totalEmployed / totalStudents * 100).toFixed(2) : 0
+    // Calculate enhanced predictions with growth rates
+    const totalStudents = Number(basicStats[0]?.total_students ?? 0);
+    const employedStudents = Number(basicStats[0]?.employed_students ?? 0);
+    const overallEmploymentRate = totalStudents > 0 ? Number((employedStudents / totalStudents * 100).toFixed(2)) : 0;
 
-    // Generate predictions based on actual historical data
+    // Calculate growth rate from future projections
+    const currentMonth = futureProjections[0];
+    const prevMonth = futureProjections[1];
+    const growthRate = currentMonth && prevMonth && prevMonth.registrations > 0 
+      ? Math.round(((currentMonth.registrations - prevMonth.registrations) / prevMonth.registrations) * 100)
+      : 15; // Default 15% growth
+
     const predictions = {
-      nextYearStudents: Math.round(totalStudents * 1.15), // 15% growth based on historical trends
-      avgGrowthRate: Math.round(totalStudents * 0.12), // 12% average growth
-      topGrowthDistricts: districtPotential.slice(0, 3).map((d: any) => d.district),
+      nextYearStudents: Math.round(totalStudents * (1 + Math.abs(growthRate) / 100)), 
+      avgGrowthRate: Math.abs(growthRate),
+      topGrowthDistricts: districtData.slice(0, 3).map((d: any) => d.district),
       seasonalPeak: seasonalPatterns.reduce((max: any, month: any) => 
-        month.registrations > (max?.registrations || 0) ? month : max, null
-      )?.month || 'Unknown'
-    }
+        Number(month.registrations) > Number(max?.registrations || 0) ? month.month : max, 'March')
+    };
 
-    // Generate marketing insights
+    // Enhanced recommendations based on actual data
     const marketingRecommendations = [
       {
-        category: 'Geographic Focus',
-        recommendation: `Focus on ${districtPotential[0]?.district || 'top performing'} districts`,
+        category: 'Market Expansion',
+        recommendation: `Target ${districtData[0]?.district || 'high-potential'} district for expansion`,
         priority: 'High',
-        reasoning: 'Highest employment success rates'
+        reasoning: `${districtData[0]?.employment_rate || 0}% employment success rate indicates strong market potential`
       },
       {
-        category: 'Qualification Marketing',
-        recommendation: `Promote ${qualificationImpact[0]?.education_qualification || 'top performing'} qualifications`,
+        category: 'Education Programs',
+        recommendation: `Focus on ${educationAnalysis[0]?.education_level || 'advanced'} qualification programs`,
         priority: 'High',
-        reasoning: 'Highest employment rates'
+        reasoning: `${educationAnalysis[0]?.employment_rate || 0}% employment rate for this education level`
       },
       {
-        category: 'Seasonal Campaigns',
-        recommendation: `Increase marketing in month ${predictions.seasonalPeak}`,
+        category: 'Experience Development',
+        recommendation: `Develop training programs for ${experienceAnalysis.find((e: any) => e.experience_level === 'No Experience')?.total_students || 0} students without experience`,
         priority: 'Medium',
-        reasoning: 'Peak registration period'
+        reasoning: 'Bridge the experience gap to improve employability'
       },
       {
-        category: 'Company Partnerships',
-        recommendation: `Strengthen partnerships with ${companyPerformance[0]?.company_name || 'top companies'}`,
+        category: 'Seasonal Strategy',
+        recommendation: `Increase enrollment campaigns during month ${predictions.seasonalPeak}`,
+        priority: 'Medium',
+        reasoning: 'Peak registration period for maximum impact'
+      },
+      {
+        category: 'Partnership Development',
+        recommendation: `Strengthen partnerships with ${companyData[0]?.company_name || 'top companies'} in ${companyData[0]?.industry || 'key industries'}`,
         priority: 'High',
-        reasoning: 'Highest employment volume'
+        reasoning: `${companyData[0]?.total_employments || 0} recent hires show strong demand`
       }
-    ]
+    ];
 
+    // Enhanced market trends from company data
+    const marketTrends = companyData.map((company: any) => ({
+      industry: company.industry,
+      country: company.country,
+      total_employments: company.total_employments,
+      unique_students: company.unique_students,
+      companies_involved: 1,
+      first_employment: company.first_hire_date,
+      latest_employment: company.latest_hire_date
+    }));
+
+    // Process seasonal patterns for better visualization
+    const processedSeasonalPatterns = seasonalPatterns.map((pattern: any) => ({
+      month: pattern.month,
+      year: pattern.year,
+      registrations: pattern.registrations,
+      employments: pattern.employments
+    }));
+
+    // Enhanced future projections with growth calculations
+    const enhancedFutureProjections = futureProjections.map((proj: any, index: number) => {
+      const prevProj = futureProjections[index + 1];
+      const growthRate = prevProj && prevProj.registrations > 0 
+        ? Number(((proj.registrations - prevProj.registrations) / prevProj.registrations * 100).toFixed(2))
+        : 0;
+      
+      return {
+        month: proj.month,
+        registrations: proj.registrations,
+        prev_month: proj.prev_month || prevProj?.registrations || 0,
+        growth_rate: growthRate
+      };
+    });
+
+    // Return comprehensive data structure
     return NextResponse.json({
-      employmentProbability,
-      employmentProgress,
-      marketTrends,
-      skillDemand,
-      seasonalPatterns,
-      districtPotential,
-      ageAnalysis,
-      qualificationImpact,
-      experienceCorrelation,
-      futureProjections,
-      riskAssessment,
-      marketingInsights,
-      companyPerformance,
-      geographicDistribution,
+      employmentProbability: districtData || [],
+      employmentProgress: employmentProgress || [],
+      marketTrends: marketTrends || [],
+      skillDemand: educationAnalysis || [],
+      seasonalPatterns: processedSeasonalPatterns || [],
+      districtPotential: districtData || [],
+      ageAnalysis: ageAnalysis || [],
+      qualificationImpact: educationAnalysis || [],
+      experienceCorrelation: experienceAnalysis || [],
+      futureProjections: enhancedFutureProjections || [],
+      riskAssessment: riskAssessment || [],
+      marketingInsights: [],
+      companyPerformance: companyData || [],
+      geographicDistribution: districtData || [],
       predictions,
       marketingRecommendations,
-      overallEmploymentRate: Number(overallEmploymentRate),
+      overallEmploymentRate,
       insights: {
         totalStudents,
-        totalEmployed,
-        topIndustries: marketTrends.reduce((acc: any, trend: any) => {
-          acc[trend.industry] = (acc[trend.industry] || 0) + Number(trend.total_employments)
-          return acc
+        totalEmployed: employedStudents,
+        topIndustries: companyData.reduce((acc: any, company: any) => {
+          acc[company.industry] = (acc[company.industry] || 0) + company.total_employments;
+          return acc;
         }, {}),
-        riskAreas: riskAssessment.filter((r: any) => r.risk_level === 'High Risk').length,
-        topPerformingDistricts: districtPotential.slice(0, 5).map((d: any) => d.district),
-        topPerformingQualifications: qualificationImpact.slice(0, 5).map((q: any) => q.education_qualification)
+        riskAreas: riskAssessment.filter((r: any) => r.risk_level === 'High Risk').length || 0,
+        topPerformingDistricts: districtData.slice(0, 5).map((d: any) => d.district) || [],
+        topPerformingQualifications: educationAnalysis.slice(0, 5).map((e: any) => e.education_level) || []
       }
-    })
+    });
   } catch (error) {
-    console.error("Pre-analysis error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("Pre-analysis error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-} 
+}import { NextResponse } from 'next/server';
+
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyA4QjUAwxz6vvq_BySU1EYC3hKTkmzdVNQ';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+
+export async function POST(request: Request) {
+	try {
+		const { prompt } = await request.json();
+		const response = await fetch(GEMINI_API_URL + `?key=${GEMINI_API_KEY}` , {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				contents: [{ parts: [{ text: prompt }] }],
+			}),
+		});
+		const data = await response.json();
+		return NextResponse.json({ prediction: data.choices?.[0]?.message?.content || data });
+	} catch (error) {
+		const errorMsg = typeof error === 'object' && error !== null && 'message' in error ? (error as any).message : String(error);
+		return NextResponse.json({ error: errorMsg }, { status: 500 });
+	}
+}

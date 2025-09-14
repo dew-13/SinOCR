@@ -283,8 +283,8 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
 
   // Main return statement
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <Card className="max-w-4xl w-full">
+    <div className="max-w-4xl mx-auto">
+      <Card className="w-full">
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
@@ -686,7 +686,7 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            <div className="flex gap-4">
+            <div className="flex gap-4 pt-2">
               <Button type="submit" disabled={loading}>
                 {loading ? "Saving..." : isEdit ? "Update Student" : "Add Student"}
               </Button>

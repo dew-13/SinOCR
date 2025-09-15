@@ -128,7 +128,9 @@ export default function StudentsPage() {
 
   const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
-    setSearch(value)
+    // Filter to allow only alphanumeric characters and spaces
+    const filteredValue = value.replace(/[^a-zA-Z0-9\s]/g, '')
+    setSearch(filteredValue)
     setSearchLoading(true)
     
     // Clear existing timeout

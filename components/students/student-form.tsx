@@ -281,6 +281,60 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
     setFormData((prev) => ({ ...prev, [field]: digits }));
   };
 
+  // Handler for Student ID (alphanumeric only, max 10 characters)
+  const handleStudentIdInput = (value: string) => {
+    // Remove any non-alphanumeric characters and limit to 10 characters
+    const filtered = value.replace(/[^a-zA-Z0-9]/g, "").slice(0, 10);
+    setFormData((prev) => ({ ...prev, studentId: filtered }));
+  };
+
+  // Handler for Permanent Address (alphanumeric, comma, forward slash only)
+  const handleAddressInput = (field: keyof StudentFormData, value: string) => {
+    // Allow only alphanumeric characters, spaces, commas, and forward slashes
+    const filtered = value.replace(/[^a-zA-Z0-9\s,/]/g, "");
+    setFormData((prev) => ({ ...prev, [field]: filtered }));
+  };
+
+  // Handler for Passport ID (first character letter, followed by 8 numbers, max 9 chars)
+  const handlePassportIdInput = (value: string) => {
+    // Remove any non-alphanumeric characters first
+    let cleaned = value.replace(/[^a-zA-Z0-9]/g, "");
+    
+    if (cleaned.length === 0) {
+      setFormData((prev) => ({ ...prev, passportId: "" }));
+      return;
+    }
+    
+    // First character must be a letter
+    let firstChar = cleaned[0].toUpperCase();
+    if (!/^[A-Z]$/.test(firstChar)) {
+      // If first character is not a letter, ignore the input
+      return;
+    }
+    
+    // Remaining characters must be numbers, limit to 8 digits
+    let remainingChars = cleaned.slice(1).replace(/[^0-9]/g, "").slice(0, 8);
+    
+    // Combine first letter with numbers
+    let formatted = firstChar + remainingChars;
+    
+    setFormData((prev) => ({ ...prev, passportId: formatted }));
+  };
+
+  // Handler for National ID (alphanumeric only, max 12 characters)
+  const handleNationalIdInput = (value: string) => {
+    // Remove any non-alphanumeric characters and limit to 12 characters
+    const filtered = value.replace(/[^a-zA-Z0-9]/g, "").slice(0, 12);
+    setFormData((prev) => ({ ...prev, nationalId: filtered }));
+  };
+
+  // Handler for alphanumeric text input (letters, numbers, and spaces)
+  const handleAlphanumericTextInput = (field: keyof StudentFormData, value: string) => {
+    // Allow letters, numbers, and spaces - useful for descriptions, qualifications, etc.
+    const filtered = value.replace(/[^a-zA-Z0-9\s]/g, "");
+    setFormData((prev) => ({ ...prev, [field]: filtered }));
+  };
+
   // Main return statement
   return (
     <div className="max-w-4xl mx-auto">
@@ -337,7 +391,8 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
               <Input
                 id="studentId"
                 value={formData.studentId}
-                onChange={(e) => handleInputChange("studentId", e.target.value)}
+                onChange={(e) => handleStudentIdInput(e.target.value)}
+                maxLength={10}
                 required
                 disabled={loading}
               />
@@ -361,7 +416,7 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
               <Input
                 id="permanentAddress"
                 value={formData.permanentAddress}
-                onChange={(e) => handleInputChange("permanentAddress", e.target.value)}
+                onChange={(e) => handleAddressInput("permanentAddress", e.target.value)}
                 required
                 disabled={loading}
               />
@@ -413,7 +468,8 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
               <Input
                 id="nationalId"
                 value={formData.nationalId}
-                onChange={(e) => handleInputChange("nationalId", e.target.value)}
+                onChange={(e) => handleNationalIdInput(e.target.value)}
+                maxLength={12}
                 required
                 disabled={loading}
               />
@@ -425,7 +481,8 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
                 <Input
                   id="passportId"
                   value={formData.passportId}
-                  onChange={(e) => handleInputChange("passportId", e.target.value)}
+                  onChange={(e) => handlePassportIdInput(e.target.value)}
+                  maxLength={9}
                   disabled={loading}
                 />
               </div>
@@ -537,7 +594,7 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
                 <Input
                   id="guardianName"
                   value={formData.guardianName || ""}
-                  onChange={(e) => handleInputChange("guardianName", e.target.value)}
+                  onChange={(e) => handleTextOnlyInput("guardianName", e.target.value)}
                   required
                   disabled={loading}
                 />
@@ -656,7 +713,7 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
               <Textarea
                 id="otherQualifications"
                 value={formData.otherQualifications}
-                onChange={(e) => handleTextOnlyInput("otherQualifications", e.target.value)}
+                onChange={(e) => handleAlphanumericTextInput("otherQualifications", e.target.value)}
                 disabled={loading}
               />
             </div>
@@ -666,7 +723,7 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
               <Textarea
                 id="workExperience"
                 value={formData.workExperience}
-                onChange={(e) => handleTextOnlyInput("workExperience", e.target.value)}
+                onChange={(e) => handleAlphanumericTextInput("workExperience", e.target.value)}
                 disabled={loading}
               />
             </div>
@@ -676,7 +733,7 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
               <Textarea
                 id="workExperienceAbroad"
                 value={formData.workExperienceAbroad}
-                onChange={(e) => handleTextOnlyInput("workExperienceAbroad", e.target.value)}
+                onChange={(e) => handleAlphanumericTextInput("workExperienceAbroad", e.target.value)}
                 disabled={loading}
               />
             </div>

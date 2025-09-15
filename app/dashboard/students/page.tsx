@@ -23,6 +23,64 @@ export default function StudentsPage() {
     district: "",
     has_driving_license: [] as string[],
   })
+    const [editingStatusId, setEditingStatusId] = useState<string | null>(null);
+    const [newStatus, setNewStatus] = useState<string>("");
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const statusOptions = ["pending", "active", "employed"];
+
+    // Confirmation dialog for status change
+    const handleConfirmStatusChange = async () => {
+      if (!editingStatusId || !newStatus) return;
+      setConfirmOpen(false);
+      setLoading(true);
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`/api/students/${editingStatusId}/status`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: newStatus }),
+        });
+        if (response.ok) {
+          setMessage("Status updated successfully.");
+          setMessageType("success");
+          fetchStudents();
+        } else {
+          setMessage("Failed to update status.");
+          setMessageType("error");
+        }
+      } catch (error) {
+        setMessage("Error updating status.");
+        setMessageType("error");
+      } finally {
+        setEditingStatusId(null);
+        setNewStatus("");
+        setLoading(false);
+        setTimeout(() => {
+          setMessage("");
+          setMessageType("");
+        }, 3000);
+      }
+    };
+
+    // Simple confirmation dialog
+    function ConfirmDialog({ open, onConfirm, onCancel }: { open: boolean; onConfirm: () => void; onCancel: () => void }) {
+      if (!open) return null;
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+          <div className="bg-white rounded shadow-lg p-6 w-80">
+            <h2 className="text-lg font-bold mb-2">Confirm Status Change</h2>
+            <p className="mb-4">Are you sure you want to change the status?</p>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={onConfirm}>Yes</Button>
+              <Button variant="outline" onClick={onCancel}>No</Button>
+            </div>
+          </div>
+        </div>
+      );
+    }
   const [message, setMessage] = useState("")
   const [messageType, setMessageType] = useState<"success" | "error" | "">("")
   const [filterOpen, setFilterOpen] = useState(false)
@@ -52,7 +110,13 @@ export default function StudentsPage() {
       })
       if (response.ok) {
         const data = await response.json()
-        setStudents(data)
+        // Sort students by full_name in ascending order
+        const sortedStudents = data.sort((a: any, b: any) => {
+          const nameA = (a.full_name || '').toLowerCase()
+          const nameB = (b.full_name || '').toLowerCase()
+          return nameA.localeCompare(nameB)
+        })
+        setStudents(sortedStudents)
       }
     } catch (error) {
       console.error("Failed to fetch students:", error)
@@ -64,7 +128,9 @@ export default function StudentsPage() {
 
   const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
-    setSearch(value)
+    // Filter to allow only alphanumeric characters and spaces
+    const filteredValue = value.replace(/[^a-zA-Z0-9\s]/g, '')
+    setSearch(filteredValue)
     setSearchLoading(true)
     
     // Clear existing timeout
@@ -105,7 +171,13 @@ export default function StudentsPage() {
       throw new Error('Failed to fetch students')
     })
     .then(data => {
-      setStudents(data)
+      // Sort students by full_name in ascending order
+      const sortedStudents = data.sort((a: any, b: any) => {
+        const nameA = (a.full_name || '').toLowerCase()
+        const nameB = (b.full_name || '').toLowerCase()
+        return nameA.localeCompare(nameB)
+      })
+      setStudents(sortedStudents)
     })
     .catch(error => {
       console.error("Failed to fetch students:", error)
@@ -372,55 +444,78 @@ export default function StudentsPage() {
 
       <div className="grid gap-4">
         {students.map((student: any) => (
-          <Card key={student.id}>
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle>{student.full_name}</CardTitle>
-                  <CardDescription>
-                    {student.district}, {student.province} • {student.mobile_phone}
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={student.status === "employed" ? "default" : "secondary"}>{student.status}</Badge>
-                  <div className="flex gap-2">
-                    {user && hasPermission(user.role, "UPDATE_STUDENT") && (
-                      <Link href={`/dashboard/students/${student.id}/edit`}>
-                        <Button variant="outline" size="sm">
-                          <Edit className="h-4 w-4" />
+            <Card key={student.id}>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle>{student.full_name}</CardTitle>
+                    <CardDescription>
+                      {student.district}, {student.province} • {student.mobile_phone}
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {editingStatusId === student.id ? (
+                      <>
+                        <select
+                          className="border rounded px-2 py-1 text-sm"
+                          value={newStatus || student.status}
+                          onChange={e => setNewStatus(e.target.value)}
+                        >
+                          {statusOptions.map(opt => (
+                            <option key={opt} value={opt}>{opt.charAt(0).toUpperCase() + opt.slice(1)}</option>
+                          ))}
+                        </select>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setConfirmOpen(true)}
+                          disabled={!newStatus || newStatus === student.status}
+                        >
+                          Save
                         </Button>
-                      </Link>
+                        <Button variant="outline" size="sm" onClick={() => { setEditingStatusId(null); setNewStatus(""); }}>
+                          Cancel
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Badge variant={student.status === "employed" ? "default" : "secondary"}>{student.status}</Badge>
+                        {user && hasPermission(user.role, "UPDATE_STUDENT") && (
+                          <Button variant="outline" size="sm" onClick={() => { setEditingStatusId(student.id); setNewStatus(student.status); }}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <p className="font-medium">Education</p>
-                  <p className="text-muted-foreground">{student.education_qualification}</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="font-medium">Education</p>
+                    <p className="text-muted-foreground">{student.education_qualification}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium">Age</p>
+                    <p className="text-muted-foreground">
+                      {new Date().getFullYear() - new Date(student.date_of_birth).getFullYear()} years
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-medium">Marital Status</p>
+                    <p className="text-muted-foreground capitalize">{student.marital_status}</p>
+                  </div>
+                  <div>
+                    <p className="font-medium">Driving License</p>
+                    <p className="text-muted-foreground">
+                      {student.has_driving_license ? `Yes (${student.vehicle_type})` : "No"}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium">Age</p>
-                  <p className="text-muted-foreground">
-                    {new Date().getFullYear() - new Date(student.date_of_birth).getFullYear()} years
-                  </p>
-                </div>
-                <div>
-                  <p className="font-medium">Marital Status</p>
-                  <p className="text-muted-foreground capitalize">{student.marital_status}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Driving License</p>
-                  <p className="text-muted-foreground">
-                    {student.has_driving_license ? `Yes (${student.vehicle_type})` : "No"}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          ))}
       </div>
 
       {students.length === 0 && (

@@ -157,7 +157,7 @@ export async function GET(request: NextRequest) {
       // Qualification Success Analysis based on actual data
       sql`
         SELECT 
-          s.education_qualification,
+          'General' as education_qualification,
           COUNT(*) as total_students,
           COUNT(CASE WHEN s.status = 'employed' THEN 1 END) as employed_students,
           ROUND(
@@ -166,9 +166,7 @@ export async function GET(request: NextRequest) {
           AVG(e.contract_duration_months) as avg_contract_duration
         FROM students s
         LEFT JOIN employees e ON s.id = e.student_id
-        GROUP BY s.education_qualification
         HAVING COUNT(*) >= 2
-        ORDER BY employment_rate DESC
       `,
 
       // Experience Impact Analysis based on actual work experience data

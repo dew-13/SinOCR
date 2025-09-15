@@ -206,7 +206,8 @@ export async function createStudent(studentData: any) {
       national_id, passport_id, passport_expired_date, sex, marital_status,
       spouse_name, number_of_children, mobile_phone, whatsapp_number,
       has_driving_license, vehicle_type, email_address, education_ol, education_al,
-      other_qualifications, work_experience, work_experience_abroad, cv_photo_url, created_by
+      other_qualifications, work_experience, work_experience_abroad, cv_photo_url, created_by,
+  student_id, guardian_contact, admission_date, expected_job_category, expected_sub_job_category, status
     ) VALUES (
       ${studentData.fullName}, ${studentData.permanentAddress}, ${studentData.district}, 
       ${studentData.province}, ${studentData.dateOfBirth}, ${studentData.nationalId},
@@ -215,7 +216,9 @@ export async function createStudent(studentData: any) {
       ${studentData.mobilePhone}, ${studentData.whatsappNumber}, ${studentData.hasDrivingLicense},
       ${studentData.vehicleType}, ${studentData.emailAddress}, ${studentData.educationOL}, ${studentData.educationAL},
       ${studentData.otherQualifications}, ${studentData.workExperience}, 
-      ${studentData.workExperienceAbroad}, ${studentData.cvPhotoUrl}, ${studentData.createdBy}
+      ${studentData.workExperienceAbroad}, ${studentData.cvPhotoUrl}, ${studentData.createdBy},
+  ${studentData.studentId}, ${studentData.guardianContact}, ${studentData.admissionDate},
+  ${studentData.expectedJobCategory}, ${studentData.expectedSubJobCategory}, ${studentData.status}
     )
     RETURNING *
   `
@@ -224,30 +227,36 @@ export async function createStudent(studentData: any) {
 export async function updateStudent(id: number, studentData: any) {
   return await sql`
     UPDATE students SET
-      full_name = ${studentData.fullName},
-      permanent_address = ${studentData.permanentAddress},
-      district = ${studentData.district},
-      province = ${studentData.province},
-      date_of_birth = ${studentData.dateOfBirth},
-      national_id = ${studentData.nationalId},
-      passport_id = ${studentData.passportId},
-      passport_expired_date = ${studentData.passportExpiredDate},
-      sex = ${studentData.sex},
-      marital_status = ${studentData.maritalStatus},
-      spouse_name = ${studentData.spouseName},
-      number_of_children = ${studentData.numberOfChildren},
-      mobile_phone = ${studentData.mobilePhone},
-      whatsapp_number = ${studentData.whatsappNumber},
-      has_driving_license = ${studentData.hasDrivingLicense},
-      vehicle_type = ${studentData.vehicleType},
-      email_address = ${studentData.emailAddress},
-      education_ol = ${studentData.educationOL},
-      education_al = ${studentData.educationAL},
-      other_qualifications = ${studentData.otherQualifications},
-      work_experience = ${studentData.workExperience},
-      work_experience_abroad = ${studentData.workExperienceAbroad},
-      cv_photo_url = ${studentData.cvPhotoUrl},
-      updated_at = CURRENT_TIMESTAMP
+  full_name = ${studentData.fullName},
+  permanent_address = ${studentData.permanentAddress},
+  district = ${studentData.district},
+  province = ${studentData.province},
+  date_of_birth = ${studentData.dateOfBirth},
+  national_id = ${studentData.nationalId},
+  passport_id = ${studentData.passportId},
+  passport_expired_date = ${studentData.passportExpiredDate},
+  sex = ${studentData.sex},
+  marital_status = ${studentData.maritalStatus},
+  spouse_name = ${studentData.spouseName},
+  number_of_children = ${studentData.numberOfChildren},
+  mobile_phone = ${studentData.mobilePhone},
+  whatsapp_number = ${studentData.whatsappNumber},
+  has_driving_license = ${studentData.hasDrivingLicense},
+  vehicle_type = ${studentData.vehicleType},
+  email_address = ${studentData.emailAddress},
+  education_ol = ${studentData.educationOL},
+  education_al = ${studentData.educationAL},
+  other_qualifications = ${studentData.otherQualifications},
+  work_experience = ${studentData.workExperience},
+  work_experience_abroad = ${studentData.workExperienceAbroad},
+  cv_photo_url = ${studentData.cvPhotoUrl},
+  student_id = ${studentData.studentId},
+  guardian_contact = ${studentData.guardianContact},
+  admission_date = ${studentData.admissionDate},
+  expected_job_category = ${studentData.expectedJobCategory},
+  expected_sub_job_category = ${studentData.expectedSubJobCategory},
+  status = ${studentData.status},
+  updated_at = CURRENT_TIMESTAMP
     WHERE id = ${id}
     RETURNING *
   `
@@ -653,4 +662,11 @@ export async function getPlacementById(id: number) {
     WHERE p.placement_id = ${id}
   `
   return result[0]
+}
+
+// Update student status
+export async function updateStudentStatus(id: string, status: string) {
+  return await sql`
+    UPDATE students SET status = ${status}, updated_at = CURRENT_TIMESTAMP WHERE id = ${id} RETURNING *
+  `;
 }

@@ -41,7 +41,13 @@ export default function EmployeesPage() {
 
       if (response.ok) {
         const data = await response.json()
-        setPlacements(data)
+        // Sort placements by student full_name in ascending order
+        const sortedPlacements = data.sort((a: any, b: any) => {
+          const nameA = (a.student?.full_name || a.student_name || '').toLowerCase()
+          const nameB = (b.student?.full_name || b.student_name || '').toLowerCase()
+          return nameA.localeCompare(nameB)
+        })
+        setPlacements(sortedPlacements)
       } else {
         const errorData = await response.json()
         setError(errorData.error || "Failed to load placements")

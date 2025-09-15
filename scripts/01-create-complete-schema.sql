@@ -52,10 +52,15 @@ CREATE TABLE students (
     work_experience TEXT,
     work_experience_abroad TEXT,
     cv_photo_url VARCHAR(500),
-    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'employed', 'inactive')),
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('Active', 'Pending', 'Employed')),
     created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ,student_id VARCHAR(20) UNIQUE
+    ,guardian_contact VARCHAR(20)
+    ,admission_date DATE DEFAULT CURRENT_DATE
+    ,expected_job_category VARCHAR(100)
+    ,expected_sub_job_category VARCHAR(100)
 );
 
 -- Companies table for affiliated companies

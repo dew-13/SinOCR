@@ -58,12 +58,12 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="h-screen bg-gray-50">
-      <div className="fixed left-0 top-0 h-screen w-64 z-30 overflow-y-auto">
+    <div className="h-screen bg-gray-50 overflow-hidden">
+      <div className="fixed left-0 top-0 h-screen w-64 z-30 overflow-y-auto border-r border-gray-200">
         <Sidebar userRole={user.role} userName={user.fullName} />
       </div>
-      <main className="ml-64 h-screen overflow-y-auto">
-        <div className="p-6 md:p-8 pt-16 md:pt-8">{children}</div>
+      <main className="ml-64 h-screen overflow-y-auto bg-gray-50">
+        <div className="p-4 md:p-6 pt-8 md:pt-6">{children}</div>
       </main>
     </div>
   )

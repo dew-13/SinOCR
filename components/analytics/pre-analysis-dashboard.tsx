@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import AIInsights from "./ai-insights"
 import {
   BarChart,
   Bar,
@@ -41,7 +42,9 @@ import {
   BarChart3,
   PieChart as PieChartIcon,
   Building2,
-  GraduationCap
+  GraduationCap,
+  Globe,
+  Calendar
 } from "lucide-react"
 
 interface PreAnalysisData {
@@ -176,6 +179,9 @@ export default function PreAnalysisDashboard() {
   const [data, setData] = useState<PreAnalysisData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [prompt, setPrompt] = useState("")
+  const [prediction, setPrediction] = useState<string>("")
+  const [predicting, setPredicting] = useState(false)
 
   useEffect(() => {
     fetchPreAnalysisData()
@@ -193,11 +199,12 @@ export default function PreAnalysisDashboard() {
         setData(analyticsData)
       } else {
         const errorData = await response.json()
-        setError(errorData.error || "Failed to load pre-analysis data")
+        const errorMessage = typeof errorData?.error === 'string' ? errorData.error : "Failed to load pre-analysis data"
+        setError(errorMessage)
       }
     } catch (error) {
       console.error("Failed to fetch pre-analysis data:", error)
-      setError("Network error occurred")
+      setError(error instanceof Error ? error.message : "Network error occurred")
     } finally {
       setLoading(false)
     }
@@ -218,11 +225,29 @@ export default function PreAnalysisDashboard() {
     )
   }
 
+
+          const handleGeminiPredict = async () => {
+            setPredicting(true)
+            setPrediction("")
+            try {
+              const res = await fetch("/api/analytics/pre-analysis", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ prompt }),
+              })
+              const result = await res.json()
+              setPrediction(result.prediction || "No prediction returned.")
+            } catch (err) {
+              setPrediction("Error fetching prediction.")
+            } finally {
+              setPredicting(false)
+            }
+          }
   if (error) {
     return (
       <Alert variant="destructive">
         <AlertTriangle className="h-4 w-4" />
-        <AlertDescription>{error}</AlertDescription>
+        <AlertDescription>{String(error)}</AlertDescription>
       </Alert>
     )
   }
@@ -267,9 +292,9 @@ export default function PreAnalysisDashboard() {
             <Brain className="h-4 w-4 text-purple-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.predictions.nextYearStudents}</div>
+            <div className="text-2xl font-bold">{data?.predictions?.nextYearStudents ?? "N/A"}</div>
             <p className="text-xs text-muted-foreground">Expected new students</p>
-            <Progress value={75} className="mt-2" />
+            <Progress value={data?.predictions?.nextYearStudents ? 75 : 0} className="mt-2" />
           </CardContent>
         </Card>
 
@@ -280,7 +305,7 @@ export default function PreAnalysisDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              +{data.predictions.avgGrowthRate}
+              +{data?.predictions?.avgGrowthRate ?? "N/A"}
             </div>
             <p className="text-xs text-muted-foreground">Students per year</p>
             <div className="flex items-center mt-2">
@@ -296,9 +321,9 @@ export default function PreAnalysisDashboard() {
             <Target className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.overallEmploymentRate}%</div>
+            <div className="text-2xl font-bold">{data?.overallEmploymentRate ?? "N/A"}%</div>
             <p className="text-xs text-muted-foreground">Current success rate</p>
-            <Progress value={data.overallEmploymentRate} className="mt-2" />
+            <Progress value={data?.overallEmploymentRate ?? 0} className="mt-2" />
           </CardContent>
         </Card>
 
@@ -308,7 +333,7 @@ export default function PreAnalysisDashboard() {
             <AlertTriangle className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.insights.riskAreas}</div>
+            <div className="text-2xl font-bold">{data?.insights?.riskAreas ?? "N/A"}</div>
             <p className="text-xs text-muted-foreground">High-risk districts</p>
             <div className="flex items-center mt-2">
               <AlertTriangle className="h-3 w-3 text-orange-500 mr-1" />
@@ -329,7 +354,7 @@ export default function PreAnalysisDashboard() {
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={data.employmentProgress}>
+            <AreaChart data={data?.employmentProgress ?? []}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis 
                 dataKey="month" 
@@ -346,79 +371,25 @@ export default function PreAnalysisDashboard() {
         </CardContent>
       </Card>
 
-      {/* Employment Probability Analysis */}
+      {/* Future Market Trends */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5" />
-              Employment Probability by Qualification
+              <Globe className="h-5 w-5" />
+              Market Expansion Opportunities
             </CardTitle>
-            <CardDescription>Success rates based on educational background</CardDescription>
+            <CardDescription>Industries and countries with growth potential</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={data.qualificationImpact.slice(0, 8)}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="education_qualification" angle={-45} textAnchor="end" height={80} />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="employment_rate" fill="#8884d8" />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Age Group Analysis
-            </CardTitle>
-            <CardDescription>Employment success by age demographics</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={data.ageAnalysis}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ age_group, employment_rate }) => `${age_group}: ${employment_rate}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="employment_rate"
-                >
-                  {data.ageAnalysis.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Market Trends & Company Performance */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              Market Trends by Industry
-            </CardTitle>
-            <CardDescription>Employment distribution across industries</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={data.marketTrends.slice(0, 8)}>
+              <BarChart data={data?.marketTrends?.slice(0, 8) ?? []}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="industry" angle={-45} textAnchor="end" height={80} />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="total_employments" fill="#00C49F" />
+                <Bar dataKey="total_employments" fill="#0088FE" name="Total Employments" />
+                <Bar dataKey="companies_involved" fill="#00C49F" name="Companies" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -427,26 +398,22 @@ export default function PreAnalysisDashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Star className="h-5 w-5" />
-              Top Performing Companies
+              <Calendar className="h-5 w-5" />
+              Seasonal Registration Patterns
             </CardTitle>
-            <CardDescription>Companies with highest employment rates</CardDescription>
+            <CardDescription>Optimal timing for enrollment campaigns</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {data.companyPerformance.slice(0, 6).map((company, index) => (
-                <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">{company.company_name}</p>
-                    <p className="text-sm text-gray-600">{company.industry} • {company.country}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold">{company.total_employments} hires</p>
-                    <p className="text-xs text-green-600">{company.market_share}% market share</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={data?.seasonalPatterns?.slice(0, 12) ?? []}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="registrations" stroke="#FF8042" strokeWidth={2} name="Registrations" />
+                <Line type="monotone" dataKey="employments" stroke="#8884D8" strokeWidth={2} name="Employments" />
+              </LineChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
@@ -457,25 +424,28 @@ export default function PreAnalysisDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MapPin className="h-5 w-5" />
-              District Potential Analysis
+              District Growth Potential
             </CardTitle>
-            <CardDescription>High-potential districts for expansion</CardDescription>
+            <CardDescription>Areas with highest expansion opportunities</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {data.districtPotential.slice(0, 8).map((district, index) => (
-                <div key={index} className="flex justify-between items-center">
+          <CardContent className="space-y-4">
+            {data?.districtPotential?.slice(0, 5).map((district, index) => (
+              <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-green-50 to-blue-50 border">
+                <div className="flex items-center space-x-3">
+                  <Badge variant="outline" className="bg-green-100 text-green-800">
+                    #{index + 1}
+                  </Badge>
                   <div>
-                    <p className="font-medium">{district.district}</p>
-                    <p className="text-sm text-gray-600">{district.province}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold">{district.employment_rate}%</p>
-                    <Progress value={district.employment_rate} className="w-20 mt-1" />
+                    <p className="font-semibold">{district.district}</p>
+                    <p className="text-sm text-muted-foreground">{district.province}</p>
                   </div>
                 </div>
-              ))}
-            </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-green-600">{district.employment_rate}%</p>
+                  <p className="text-xs text-muted-foreground">{district.total_students} students</p>
+                </div>
+              </div>
+            )) ?? <p>No district data available</p>}
           </CardContent>
         </Card>
 
@@ -483,136 +453,157 @@ export default function PreAnalysisDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5" />
-              Risk Assessment
+              Risk Assessment Dashboard
             </CardTitle>
-            <CardDescription>Areas requiring immediate attention</CardDescription>
+            <CardDescription>Districts requiring intervention strategies</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {data.riskAssessment.slice(0, 6).map((risk, index) => (
-                <div key={index} className="flex justify-between items-center p-3 rounded-lg border">
+          <CardContent className="space-y-4">
+            {data?.riskAssessment?.slice(0, 5).map((risk, index) => (
+              <div key={index} className={`flex items-center justify-between p-3 rounded-lg border ${getRiskColor(risk.risk_level)}`}>
+                <div className="flex items-center space-x-3">
+                  <AlertTriangle className={`h-4 w-4 ${
+                    risk.risk_level === 'High Risk' ? 'text-red-600' : 
+                    risk.risk_level === 'Medium Risk' ? 'text-yellow-600' : 'text-green-600'
+                  }`} />
                   <div>
-                    <p className="font-medium">{risk.district}</p>
-                    <p className="text-sm text-gray-600">{risk.employment_rate}% success rate</p>
+                    <p className="font-semibold">{risk.district}</p>
+                    <Badge variant="outline" className={getRiskColor(risk.risk_level)}>
+                      {risk.risk_level}
+                    </Badge>
                   </div>
-                  <Badge className={getRiskColor(risk.risk_level)}>
-                    {risk.risk_level}
-                  </Badge>
                 </div>
-              ))}
-            </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold">{risk.employment_rate}%</p>
+                  <p className="text-xs text-muted-foreground">{risk.total_students} students</p>
+                </div>
+              </div>
+            )) ?? <p>No risk data available</p>}
           </CardContent>
         </Card>
       </div>
 
-      {/* Marketing Insights & Recommendations */}
+      {/* Future Projections & Growth Analysis */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Growth Projections & Forecasting
+          </CardTitle>
+          <CardDescription>Monthly registration trends and growth rate analysis</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={data?.futureProjections ?? []}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="month" 
+                tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short' })}
+              />
+              <YAxis yAxisId="left" />
+              <YAxis yAxisId="right" orientation="right" />
+              <Tooltip 
+                labelFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              />
+              <Line yAxisId="left" type="monotone" dataKey="registrations" stroke="#8884d8" strokeWidth={2} name="Registrations" />
+              <Line yAxisId="right" type="monotone" dataKey="growth_rate" stroke="#00C49F" strokeWidth={2} name="Growth Rate %" />
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={data?.ageAnalysis ?? []}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ age_group, employment_rate }) => `${age_group}: ${employment_rate}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="employment_rate"
+                >
+                  {(data?.ageAnalysis ?? []).map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+      {/* Market Insights & Strategic Recommendations */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Lightbulb className="h-5 w-5" />
-            Marketing Insights & Recommendations
+            AI-Powered Strategic Recommendations
           </CardTitle>
-          <CardDescription>AI-powered strategic recommendations for improvement</CardDescription>
+          <CardDescription>Data-driven insights for business expansion and improvement</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {data.marketingRecommendations.map((rec, index) => (
+            {(data?.marketingRecommendations ?? []).map((rec, index) => (
               <div key={index} className="p-4 border rounded-lg bg-gradient-to-br from-blue-50 to-purple-50">
                 <div className="flex items-center gap-2 mb-2">
                   <Star className="h-4 w-4 text-yellow-500" />
                   <span className="font-semibold">{rec.category}</span>
+                  <Badge variant={rec.priority === 'High' ? 'default' : 'secondary'} className="ml-auto">
+                    {rec.priority}
+                  </Badge>
                 </div>
                 <p className="font-medium text-sm mb-2">{rec.recommendation}</p>
                 <p className="text-xs text-gray-600">{rec.reasoning}</p>
-                <div className="mt-2">
-                  <Badge variant={rec.priority === 'High' ? 'default' : 'secondary'}>
-                    Priority: {rec.priority}
-                  </Badge>
-                </div>
               </div>
             ))}
           </div>
         </CardContent>
       </Card>
 
-      {/* Future Projections */}
+      {/* AI Insights */}
+      <AIInsights data={data} />
+
+      {/* Gemini AI Predictions */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Growth Projections & Seasonal Patterns
+            <Brain className="h-5 w-5" />
+            Gemini AI Predictive Analysis
           </CardTitle>
-          <CardDescription>Predicted trends and seasonal patterns</CardDescription>
+          <CardDescription>Ask AI for specific predictions about your student placement system</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={data.futureProjections}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="month" 
-                  tickFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'short' })}
-                />
-                <YAxis />
-                <Tooltip 
-                  labelFormatter={(value) => new Date(value).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                />
-                <Line type="monotone" dataKey="registrations" stroke="#8884d8" strokeWidth={2} name="Registrations" />
-                <Line type="monotone" dataKey="growth_rate" stroke="#00C49F" strokeWidth={2} name="Growth Rate %" />
-              </LineChart>
-            </ResponsiveContainer>
-
-            <div className="space-y-4">
-              <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg">
-                <h4 className="font-semibold mb-2">Seasonal Insights</h4>
-                <p className="text-sm text-gray-600 mb-2">Peak registration month: <strong>{data.predictions.seasonalPeak}</strong></p>
-                <p className="text-sm text-gray-600">Top growth districts: {data.predictions.topGrowthDistricts.join(', ')}</p>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium">Analysis Prompt</label>
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="e.g., Predict employment trends for next quarter based on current data..."
+                className="w-full mt-1 p-3 border rounded-md min-h-[100px] resize-none"
+              />
+              <button
+                onClick={handleGeminiPredict}
+                disabled={predicting || !prompt.trim()}
+                className="w-full mt-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {predicting ? "Analyzing..." : "Generate AI Prediction"}
+              </button>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium">AI Prediction Results</label>
+              <div className="mt-1 p-3 border rounded-md min-h-[100px] bg-gray-50">
+                {predicting ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin w-4 h-4 border-2 border-purple-600 rounded-full border-t-transparent"></div>
+                    <span className="text-sm text-gray-600">AI is analyzing your data...</span>
+                  </div>
+                ) : prediction ? (
+                  <p className="text-sm whitespace-pre-wrap">{prediction}</p>
+                ) : (
+                  <p className="text-sm text-gray-500">Enter a prompt and click "Generate AI Prediction" to get insights</p>
+                )}
               </div>
-              
-              <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg">
-                <h4 className="font-semibold mb-2">Market Insights</h4>
-                <p className="text-sm text-gray-600">Total students: <strong>{data.insights.totalStudents}</strong></p>
-                <p className="text-sm text-gray-600">Employed students: <strong>{data.insights.totalEmployed}</strong></p>
-                <p className="text-sm text-gray-600">Top industries: {Object.keys(data.insights.topIndustries).slice(0, 3).join(', ')}</p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Key Performance Indicators */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Key Performance Indicators
-          </CardTitle>
-          <CardDescription>Summary of critical success metrics</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg">
-              <h4 className="font-semibold mb-2">Top Performing Districts</h4>
-              <p className="text-sm text-gray-600">{data.insights.topPerformingDistricts.slice(0, 3).join(', ')}</p>
-              <p className="text-xs text-green-600">Highest employment success rates</p>
-            </div>
-            
-            <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
-              <h4 className="font-semibold mb-2">Top Qualifications</h4>
-              <p className="text-sm text-gray-600">{data.insights.topPerformingQualifications.slice(0, 3).join(', ')}</p>
-              <p className="text-xs text-blue-600">Highest employment rates</p>
-            </div>
-            
-            <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg">
-              <h4 className="font-semibold mb-2">Market Share</h4>
-              <p className="text-sm text-gray-600">{data.companyPerformance.length} active companies</p>
-              <p className="text-xs text-purple-600">Employment partnerships</p>
-            </div>
-            
-            <div className="p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg">
-              <h4 className="font-semibold mb-2">Risk Management</h4>
-              <p className="text-sm text-gray-600">{data.insights.riskAreas} high-risk areas</p>
-              <p className="text-xs text-orange-600">Requires attention</p>
             </div>
           </div>
         </CardContent>

@@ -10,7 +10,7 @@ const checkStudentIdExists = async (studentId: string) => {
     return false;
   }
 };
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +45,135 @@ const districts = {
   "North Central": ["Anuradhapura", "Polonnaruwa"],
   Uva: ["Badulla", "Monaragala"],
   Sabaragamuwa: ["Ratnapura", "Kegalle"],
+};
+
+// Sinhala to English job category mapping for OCR accuracy
+const jobCategoryMapping = {
+  // Nursing care variations
+  "නර්සිං නෝයාව": "Nursing care",
+  "නර්සිං සත්කාරය": "Nursing care",
+  "හොස්පිටල් සත්කාර සේවාව": "Nursing care",
+  "හොස්පිටල්": "Nursing care",
+  "සෙවා": "Nursing care",
+  "නර්සිං": "Nursing care",
+  
+  // Building Cleaning
+  "ගොඩනැගිලි පිරිසිදු කිරීම": "Building Cleaning",
+  "පිරිසිදු කිරීම": "Building Cleaning",
+  "ගොඩනැගිලි": "Building Cleaning",
+  
+  // Industrial manufacturing
+  "කාර්මික නිෂ්පාදනය": "Industrial manufacturing",
+  "කර්මාන්ත": "Industrial manufacturing",
+  "නිෂ්පාදනය": "Industrial manufacturing",
+  
+  // Construction
+  "ගොඩනැගිලි ඉදිකිරීම": "Construction",
+  "ඉදිකිරීම": "Construction",
+  "ගොඩනැගිලි කාර්මිකය": "Construction",
+  
+  // Shipbuilding and Marine Industry
+  "නෞකා නිෂ්පාදනය සහ සාගර කාර්මික කර්මාන්තය": "Shipbuilding and Marine Industry",
+  "නෞකා නිෂ්පාදනය": "Shipbuilding and Marine Industry",
+  "සාගර කර්මාන්තය": "Shipbuilding and Marine Industry",
+  "නෞකා": "Shipbuilding and Marine Industry",
+  
+  // Automobile Maintenance
+  "මෝටර් රථ නඩත්තු කිරීම": "Automobile Maintenance",
+  "මෝටර් රථ": "Automobile Maintenance",
+  "නඩත්තු": "Automobile Maintenance",
+  "වාහන": "Automobile Maintenance",
+  
+  // Aviation
+  "ගුවන් සේවා": "Aviation",
+  "ගුවන්": "Aviation",
+  "ගුවන් යානා": "Aviation",
+  
+  // Accommodation
+  "නවාතැන් සැපයීම": "Accommodation",
+  "නවාතැන්": "Accommodation",
+  "හෝටල්": "Accommodation",
+  
+  // Automobile transport industry
+  "මෝටර් රථ ප්‍රවාහන කර්මාන්තය": "Automobile transport industry",
+  "ප්‍රවාහන": "Automobile transport industry",
+  "ප්‍රවාහන කර්මාන්තය": "Automobile transport industry",
+  
+  // Railway
+  "දුම්රිය සේවාව": "Railway",
+  "දුම්රිය": "Railway",
+  "රේල්": "Railway",
+  
+  // Agriculture
+  "කෘෂිකර්මය": "Agriculture",
+  "ගොවිතැන": "Agriculture",
+  "කෘෂිකර්මාන්තය": "Agriculture",
+  
+  // Fisheries
+  "මාළු කර්මාන්තය": "Fisheries",
+  "මාළු": "Fisheries",
+  "ධීවර": "Fisheries",
+  
+  // Food and beverage manufacturing
+  "ආහාර නිෂ්පාදනය": "Food and beverage manufacturing",
+  "ආහාර": "Food and beverage manufacturing",
+  "ආහාර කර්මාන්තය": "Food and beverage manufacturing",
+  
+  // Food service
+  "ආහාර සේවා": "Food service",
+  "ආහාර සේවාව": "Food service",
+  "ආහාරසේවා": "Food service",
+  
+  // Forestry
+  "වනාන්තර කළමනාකරණය": "Forestry",
+  "වනාන්තර": "Forestry",
+  "වන": "Forestry",
+  
+  // Timber Industry
+  "දාරු කර්මාන්තය": "Timber Industry",
+  "දාරු": "Timber Industry",
+  "ලී": "Timber Industry"
+};
+
+// Function to translate Sinhala job category to English
+const translateJobCategory = (sinhalaText: string): string => {
+  if (!sinhalaText) return "";
+  
+  // First try exact match
+  const exactMatch = jobCategoryMapping[sinhalaText as keyof typeof jobCategoryMapping];
+  if (exactMatch) {
+    console.log(`🔄 Exact job category match: "${sinhalaText}" → "${exactMatch}"`);
+    return exactMatch;
+  }
+  
+  // Try partial matching for any Sinhala text that contains known terms
+  for (const [sinhalaKey, englishValue] of Object.entries(jobCategoryMapping)) {
+    if (sinhalaText.includes(sinhalaKey) || sinhalaKey.includes(sinhalaText)) {
+      console.log(`🔄 Partial job category match: "${sinhalaText}" contains "${sinhalaKey}" → "${englishValue}"`);
+      return englishValue;
+    }
+  }
+  
+  // If no Sinhala match found, check if it's already in English and valid
+  const validEnglishCategories = [
+    "Nursing care", "Building Cleaning", "Industrial manufacturing", "Construction",
+    "Shipbuilding and Marine Industry", "Automobile Maintenance", "Aviation", "Accommodation",
+    "Automobile transport industry", "Railway", "Agriculture", "Fisheries",
+    "Food and beverage manufacturing", "Food service", "Forestry", "Timber Industry"
+  ];
+  
+  // Check if the text matches any valid English category (case-insensitive)
+  const englishMatch = validEnglishCategories.find(category => 
+    category.toLowerCase() === sinhalaText.toLowerCase()
+  );
+  
+  if (englishMatch) {
+    console.log(`✅ Valid English job category: "${sinhalaText}" → "${englishMatch}"`);
+    return englishMatch;
+  }
+  
+  console.log(`⚠️ No job category translation found for: "${sinhalaText}"`);
+  return sinhalaText; // Return original if no translation found
 };
 
 interface StudentFormData {
@@ -176,6 +305,7 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
     setLoading(true);
     setError("");
     setOcrError("");
+    const startTime = Date.now();
 
     try {
       console.log("🔄 Starting OCR processing for new document...");
@@ -195,6 +325,7 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
       }
 
       const result = await response.json();
+      const processingTime = Date.now() - startTime;
       
       if (result.error) {
         setOcrError(result.error);
@@ -242,15 +373,41 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
         console.log("🔍 OCR extracted data keys:", Object.keys(result.extractedData));
         console.log("🔍 OCR extracted data:", result.extractedData);
         
+        let fieldsExtracted = 0;
+        const totalFields = Object.keys(initialFormData).length;
+        
         Object.keys(result.extractedData).forEach(key => {
-          const value = result.extractedData[key];
-          // Only set non-empty values
-          if (value !== null && value !== undefined && value !== "") {
-            cleanedData[key as keyof StudentFormData] = value;
+          let value = result.extractedData[key];
+          
+          // Apply job category translation for expectedJobCategory field
+          if (key === "expectedJobCategory" && value) {
+            const translatedValue = translateJobCategory(value);
+            if (translatedValue !== value) {
+              console.log(`🔄 Job category translated: "${value}" → "${translatedValue}"`);
+              value = translatedValue;
+            }
+          }
+          
+          // Only set non-empty values and ensure key exists in StudentFormData
+          if (value !== null && value !== undefined && value !== "" && key in cleanedData) {
+            (cleanedData as any)[key] = value;
+            fieldsExtracted++;
             console.log(`✅ Mapped ${key}: ${value}`);
           } else {
-            console.log(`⚠️ Skipped empty field ${key}: ${value}`);
+            console.log(`⚠️ Skipped empty/invalid field ${key}: ${value}`);
           }
+        });
+
+        // Calculate accuracy based on confidence or use a default calculation
+        const accuracy = result.confidence || Math.min(95, (fieldsExtracted / totalFields) * 100 + 20);
+        
+        // Set OCR summary
+        setOcrSummary({
+          accuracy: Math.round(accuracy),
+          fieldsExtracted,
+          totalFields,
+          documentType: result.documentType || "Student Document",
+          processingTime: Math.round(processingTime / 1000)
         });
 
         // Validate province-district relationship and auto-detect province
@@ -279,17 +436,40 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
           const validDistricts = districts[cleanedData.province as keyof typeof districts];
           if (validDistricts && !validDistricts.includes(cleanedData.district)) {
             console.log(`⚠️ District ${cleanedData.district} not valid for province ${cleanedData.province}, clearing district`);
+            console.log(`⚠️ Valid districts for ${cleanedData.province}:`, validDistricts);
             cleanedData.district = "";
+          } else {
+            console.log(`✅ District ${cleanedData.district} is valid for province ${cleanedData.province}`);
           }
         }
 
-        setFormData(cleanedData);
+        // Set form data with proper sequencing for province-district relationship
+        setFormData((prevData) => {
+          const newData = {
+            ...prevData,
+            ...cleanedData
+          };
+          
+          console.log("✅ Form cleared and filled with new OCR data");
+          console.log("🔍 Final form data after OCR update:", newData);
+          console.log("🔍 Gender value set to:", newData.sex);
+          console.log("🔍 District value set to:", newData.district);
+          console.log("🔍 Province value set to:", newData.province);
+          
+          // Force a small delay to ensure Select components re-render
+          setTimeout(() => {
+            console.log("🔄 Checking form data after render delay:", {
+              province: newData.province,
+              district: newData.district,
+              isDistrictValid: newData.province && newData.district ? 
+                districts[newData.province as keyof typeof districts]?.includes(newData.district) : null
+            });
+          }, 100);
+          
+          return newData;
+        });
+        
         setOcrError("");
-        console.log("✅ Form cleared and filled with new OCR data");
-        console.log("🔍 Final form data after OCR update:", cleanedData);
-        console.log("🔍 Gender value set to:", cleanedData.sex);
-        console.log("🔍 District value set to:", cleanedData.district);
-        console.log("🔍 Province value set to:", cleanedData.province);
         
         // Show success message to user
         setError("");
@@ -305,6 +485,7 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
     } catch (error) {
       console.error("Error processing document:", error);
       setOcrError("Failed to process document. Please try again.");
+      setOcrSummary(null);
     } finally {
       setLoading(false);
       // Reset file input
@@ -362,10 +543,48 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
   const [ocrError, setOcrError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [emailError, setEmailError] = useState("");
+  const [ocrSummary, setOcrSummary] = useState<{
+    accuracy: number;
+    fieldsExtracted: number;
+    totalFields: number;
+    documentType: string;
+    processingTime: number;
+  } | null>(null);
+
+  // Effect to validate district when province changes (but not during OCR processing)
+  useEffect(() => {
+    if (formData.province && formData.district && !loading) {
+      const validDistricts = districts[formData.province as keyof typeof districts];
+      if (validDistricts && !validDistricts.includes(formData.district)) {
+        console.log(`🔧 Province changed: District ${formData.district} not valid for ${formData.province}, clearing district`);
+        setFormData(prev => ({ ...prev, district: "" }));
+      }
+    }
+  }, [formData.province, loading]);
 
   // Handler for generic input change
   const handleInputChange = (field: keyof StudentFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Special handler for province change
+  const handleProvinceChange = (province: string) => {
+    setFormData((prev) => {
+      const newData = { ...prev, province };
+      
+      // Check if current district is valid for new province
+      if (prev.district) {
+        const validDistricts = districts[province as keyof typeof districts];
+        if (!validDistricts || !validDistricts.includes(prev.district)) {
+          console.log(`🔧 Province changed to ${province}: District ${prev.district} not valid, clearing district`);
+          newData.district = "";
+        } else {
+          console.log(`✅ Province changed to ${province}: District ${prev.district} remains valid`);
+        }
+      }
+      
+      return newData;
+    });
   };
 
   // Handler for text-only input
@@ -492,6 +711,7 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
     setError("");
     setEmailError("");
     setOcrError("");
+    setOcrSummary(null);
     console.log("🧹 Form data cleared");
   };
 
@@ -546,6 +766,51 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
           </div>
         </CardHeader>
         <CardContent>
+          {/* OCR Summary Section - Only shown after document import */}
+          {!isEdit && ocrSummary && (
+            <Card className="mb-6 border-green-200 bg-green-50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg text-green-800 flex items-center gap-2">
+                  <Camera className="h-5 w-5" />
+                  Document Processing Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="flex flex-col">
+                    <span className="text-gray-600 font-medium">Accuracy Rate</span>
+                    <span className={`text-lg font-bold ${ocrSummary.accuracy >= 80 ? 'text-green-600' : ocrSummary.accuracy >= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
+                      {ocrSummary.accuracy}%
+                    </span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-gray-600 font-medium">Fields Extracted</span>
+                    <span className="text-lg font-bold text-blue-600">
+                      {ocrSummary.fieldsExtracted}/{ocrSummary.totalFields}
+                    </span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-gray-600 font-medium">Document Type</span>
+                    <span className="text-sm font-medium text-gray-800">
+                      {ocrSummary.documentType}
+                    </span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-gray-600 font-medium">Processing Time</span>
+                    <span className="text-lg font-bold text-purple-600">
+                      {ocrSummary.processingTime}s
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-3 p-2 bg-blue-50 rounded-md">
+                  <p className="text-xs text-blue-700">
+                    💡 <strong>Tip:</strong> Please review all extracted fields before submitting. You can manually edit any incorrect information.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Student ID at the top */}
             <div className="mb-4">
@@ -587,7 +852,7 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
             <div className="mb-4 flex flex-col md:flex-row gap-4">
               <div className="flex-1">
                 <Label htmlFor="province">Province *</Label>
-                <Select value={formData.province} onValueChange={(value) => handleInputChange("province", value)}>
+                <Select value={formData.province} onValueChange={handleProvinceChange}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select province" />
                   </SelectTrigger>
@@ -600,7 +865,11 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
               </div>
               <div className="flex-1">
                 <Label htmlFor="district">District *</Label>
-                <Select value={formData.district} onValueChange={(value) => handleInputChange("district", value)}>
+                <Select 
+                  key={`district-${formData.province}`} 
+                  value={formData.district} 
+                  onValueChange={(value) => handleInputChange("district", value)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select district" />
                   </SelectTrigger>
@@ -881,7 +1150,7 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
             </div>
             {/* Local Work Experience */}
             <div className="mb-4">
-              <Label htmlFor="workExperience">Local Work Experience *</Label>
+              <Label htmlFor="workExperience">Local Work Experience</Label>
               <Textarea
                 id="workExperience"
                 value={formData.workExperience}
@@ -891,7 +1160,7 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
             </div>
             {/* Work Experience Abroad */}
             <div className="mb-4">
-              <Label htmlFor="workExperienceAbroad">Work Experience Abroad *</Label>
+              <Label htmlFor="workExperienceAbroad">Work Experience Abroad</Label>
               <Textarea
                 id="workExperienceAbroad"
                 value={formData.workExperienceAbroad}

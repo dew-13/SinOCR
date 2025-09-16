@@ -1,0 +1,39 @@
+{
+  "extractedData": {
+    "fullName": "omas 6dra dond gar sgmoග මානව කීග",
+    "permanentAddress": null,
+    "province": "",
+    "district": null,
+    "dateOfBirth": "2001-04-13",
+    "nationalId": "200160500550",
+    "passportId": null,
+    "passportExpiredDate": null,
+    "sex": "male",
+    "maritalStatus": "Single",
+    "spouseName": null,
+    "numberOfChildren": 0,
+    "mobilePhone": "771876870",
+    "whatsappNumber": "713486632",
+    "emailAddress": "ashinisaubhagyamanawasinghe@gmail.com",
+    "hasDrivingLicense": false,
+    "vehicleType": null,
+    "educationOL": true,
+    "educationAL": true,
+    "otherQualifications": null,
+    "workExperience": null,
+    "workExperienceAbroad": null,
+    "expectedJobCategory": null,
+    "guardianName": "සහෝ ප්‍රියන්න",
+    "guardianContact": null
+  },
+  "confidence": 0.56,
+  "passes": 3,
+  "warnings": [
+    "Invalid province: ඛාප්පාභිණි"
+  ],
+  "timestamp": "2025-09-16T00:41:29.655Z",
+  "processingTime": 19306,
+  "fromCache": false,
+  "cachedAt": "2025-09-16T00:41:29.657Z",
+  "fileHash": "cd6231c3f59c69c4d7d9b1ea5e15abb10a98209c981dbd20cd73a4315fe8c51a"
+}

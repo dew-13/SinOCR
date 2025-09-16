@@ -1,49 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Suspense } from "react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  Area,
-  AreaChart,
-  PieChart,
-  Pie,
-  Cell,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
-} from "recharts"
-import { 
-  TrendingUp, 
-  Brain, 
-  Target, 
-  Zap, 
-  AlertTriangle, 
-  Users, 
-  DollarSign, 
-  MapPin,
-  Clock,
-  Star,
-  TrendingDown,
-  Lightbulb,
-  BarChart3,
-  PieChart as PieChartIcon
-} from "lucide-react"
+import { AlertTriangle } from "lucide-react"
 import { hasPermission } from "@/lib/permissions"
-import PreAnalysisDashboard from "@/components/analytics/pre-analysis-dashboard"
+import AIInsightsDashboard from "@/components/analytics/ai-insights-dashboard"
 
 export default function PreAnalysisPage() {
   const [user, setUser] = useState<any>(null)
@@ -66,8 +28,8 @@ export default function PreAnalysisPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Pre Analysis (Predictive)</h1>
-          <p className="text-muted-foreground">Future trends and predictions</p>
+          <h1 className="text-3xl font-bold tracking-tight">Pre Analysis (AI Insights)</h1>
+          <p className="text-muted-foreground">AI-powered insights and predictions for strategic planning</p>
         </div>
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
@@ -78,19 +40,21 @@ export default function PreAnalysisPage() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
+    <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-          
-        </h1>
-        <p className="text-muted-foreground mt-2">
-         
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">Pre Analysis (AI Insights)</h1>
+        <p className="text-muted-foreground">AI-powered insights and predictions for strategic planning</p>
       </div>
-
-      {/* Main Dashboard Component */}
-      <PreAnalysisDashboard />
+      
+      <Suspense fallback={
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-32 bg-gray-200 rounded animate-pulse"></div>
+          ))}
+        </div>
+      }>
+        <AIInsightsDashboard />
+      </Suspense>
     </div>
   )
 } 

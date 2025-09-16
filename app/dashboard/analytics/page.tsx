@@ -168,29 +168,29 @@ export default function AnalyticsOverviewPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Brain className="h-5 w-5 text-purple-500" />
-             
+              AI Insights & Predictions
             </CardTitle>
             <CardDescription>
-       
+              AI-powered insights and strategic predictions
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Lightbulb className="h-4 w-4 text-yellow-500" />
-                <span className="text-sm font-medium">Employment Probability Analysis</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-green-500" />
-                <span className="text-sm font-medium">Salary Predictions</span>
+                <span className="text-sm font-medium">Trend Analysis & Insights</span>
               </div>
               <div className="flex items-center gap-2">
                 <Target className="h-4 w-4 text-blue-500" />
-                <span className="text-sm font-medium">Market Trend Analysis</span>
+                <span className="text-sm font-medium">Predictive Metrics</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-green-500" />
+                <span className="text-sm font-medium">Geographic Intelligence</span>
               </div>
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-orange-500" />
-                <span className="text-sm font-medium">Risk Assessment</span>
+                <span className="text-sm font-medium">Strategic Recommendations</span>
               </div>
             </div>
             
@@ -200,7 +200,7 @@ export default function AnalyticsOverviewPage() {
                 onClick={() => router.push('/dashboard/analytics/pre-analysis')}
                 className="bg-purple-600 hover:bg-purple-700"
               >
-                Explore Pre Analysis
+                Explore AI Insights
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
@@ -343,7 +343,7 @@ export default function AnalyticsOverviewPage() {
               onClick={() => router.push('/dashboard/analytics/pre-analysis')}
             >
               <Brain className="h-6 w-6" />
-              <span>Predictive Analytics</span>
+              <span>AI Insights</span>
             </Button>
             
             <Button 

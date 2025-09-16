@@ -20,8 +20,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Camera, Loader2 } from "lucide-react";
+import { Camera, Loader2, Upload } from "lucide-react";
 import { generateStudentPdf } from "@/lib/generateStudentPdf";
+import CsvImport from "./csv-import";
 
 const provinces = [
   "Western",
@@ -543,6 +544,7 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
   const [ocrError, setOcrError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [emailError, setEmailError] = useState("");
+  const [showCsvImport, setShowCsvImport] = useState(false);
   const [ocrSummary, setOcrSummary] = useState<{
     accuracy: number;
     fieldsExtracted: number;
@@ -740,7 +742,17 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
                   ) : (
                     <Camera className="mr-2 h-4 w-4" />
                   )}
-                  {loading ? "Processing..." : "Import from Document"}
+                  {loading ? "Processing..." : "Scan"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCsvImport(true)}
+                  disabled={loading}
+                  className="h-10"
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  CSV
                 </Button>
                 <Button
                   type="button"
@@ -1185,6 +1197,19 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
           </form>
         </CardContent>
       </Card>
+      
+      {/* CSV Import Modal */}
+      {showCsvImport && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <CsvImport 
+            onClose={() => setShowCsvImport(false)}
+            onSuccess={() => {
+              setShowCsvImport(false);
+              router.push("/dashboard/students");
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

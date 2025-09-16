@@ -231,27 +231,6 @@ export default function LoginForm() {
             </Button>
           </form>
 
-          <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-            <p className="text-sm font-medium text-gray-700 mb-3">Demo Credentials:</p>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="font-medium text-orange-600">Developer:</span>
-                <span className="text-gray-600">developer@system.com / admin123</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium text-purple-600">Owner:</span>
-                <span className="text-gray-600">owner@system.com / admin123</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium text-blue-600">Admin:</span>
-                <span className="text-gray-600">admin@system.com / admin123</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="font-medium text-green-600">Teacher:</span>
-                <span className="text-gray-600">teacher@system.com / admin123</span>
-              </div>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>

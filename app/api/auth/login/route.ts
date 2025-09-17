@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
         email: user.email,
         fullName: user.fullName,
         role: user.role,
+        mustChangePassword: user.mustChangePassword === true,
       },
     })
   } catch (error) {

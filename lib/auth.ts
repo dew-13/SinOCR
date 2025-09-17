@@ -53,6 +53,7 @@ export async function authenticateUser(email: string, password: string) {
       email: user.email,
       fullName: user.full_name,
       role: user.role,
+      mustChangePassword: user.must_change_password === true,
     }
   } catch (error) {
     console.error("Authentication error:", error)

@@ -168,30 +168,56 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
       setLoading(false);
     }
   };
-  // Handler for image upload (OCR)
+  // Handler for document upload and AI processing
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
     setLoading(true);
     setError("");
     setOcrError("");
-    const uploadFormData = new FormData();
-    uploadFormData.append("image", file);
+
     try {
-      const response = await fetch("http://localhost:5000/predict", {
+      // Create FormData for file upload
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+
+      // Call the AI processing API
+      const response = await fetch("/api/ai-document-processor", {
         method: "POST",
         body: uploadFormData,
       });
-      const data = await response.json();
-      if (response.ok) {
-        // You can parse OCR data and update formData here if needed
-      } else {
-        setOcrError(data.error || "OCR failed");
+
+      if (!response.ok) {
+        throw new Error("Failed to process document");
       }
-    } catch (err) {
-      setOcrError("OCR request failed");
+
+      const result = await response.json();
+      
+      if (result.error) {
+        setOcrError(result.error);
+        return;
+      }
+
+      // Auto-fill form with extracted data
+      if (result.extractedData) {
+        setFormData((prev) => ({
+          ...prev,
+          ...result.extractedData,
+        }));
+        setOcrError("");
+      }
+
+    } catch (error) {
+      console.error("Error processing document:", error);
+      setOcrError("Failed to process document. Please try again.");
+    } finally {
+      setLoading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
-    setLoading(false);
   };
   const [formData, setFormData] = useState<StudentFormData>({
     fullName: student?.full_name || "",

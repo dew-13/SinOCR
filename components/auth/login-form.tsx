@@ -75,6 +75,12 @@ export default function LoginForm() {
         localStorage.setItem("token", data.token)
         localStorage.setItem("user", JSON.stringify(data.user))
         
+        // If must change password, force redirect to change password page
+        if (data.user.mustChangePassword) {
+          router.push("/change-password")
+          return
+        }
+
         // Redirect based on user role
         if (data.user.role === "admin" || data.user.role === "teacher") {
           router.push("/dashboard/students")

@@ -125,6 +125,7 @@ export default function UserForm({ user, isEdit = false, onSuccess }: UserFormPr
         role: formData.role,
       }
 
+      let tempPassword = "";
       if (isEdit) {
         // For editing, use the password from the form if provided
         if (formData.password.trim()) {
@@ -132,7 +133,7 @@ export default function UserForm({ user, isEdit = false, onSuccess }: UserFormPr
         }
       } else {
         // For new users, generate a temporary password
-        const tempPassword = generateTemporaryPassword(formData.fullName, formData.email, formData.role);
+        tempPassword = generateTemporaryPassword(formData.fullName, formData.email, formData.role);
         setGeneratedPassword(tempPassword);
         payload.password = tempPassword
       }
@@ -148,15 +149,56 @@ export default function UserForm({ user, isEdit = false, onSuccess }: UserFormPr
       
       const data = await response.json()
       
+      // Send credentials email using EmailJS
+      const sendEmail = async (toEmail: string, fullName: string, role: string, password: string) => {
+        try {
+          const serviceId = "service_n04gp98";
+          const templateId = "template_9csyyec";
+          const userId = "quhY8crx_fqGtgUun";
+          const templateParams = {
+            to_email: toEmail,
+            full_name: fullName,
+            role: role.charAt(0).toUpperCase() + role.slice(1),
+            password,
+            login_url: `${window.location.origin}/login`,
+          };
+          const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              service_id: serviceId,
+              template_id: templateId,
+              user_id: userId,
+              template_params: templateParams,
+            }),
+          });
+          if (!response.ok) throw new Error("Failed to send email");
+          return true;
+        } catch (err) {
+          return false;
+        }
+      };
+
       if (response.ok) {
         if (isEdit) {
           setSuccess("User updated successfully!")
           if (onSuccess) {
             onSuccess()
           }
+          // Send email with the new password if provided
+          const emailSent = await sendEmail(formData.email, formData.fullName, formData.role, formData.password)
         } else {
-          setSuccess("User created successfully! Click 'Send Email' to send credentials.")
-          setShowEmailButton(true)
+          setSuccess("User created successfully! Sending credentials email...")
+          setShowEmailButton(false)
+          // Send email automatically with tempPassword
+          const emailSent = await sendEmail(formData.email, formData.fullName, formData.role, tempPassword)
+          if (emailSent) {
+            setSuccess("User created and credentials email sent successfully!")
+          } else {
+            setError("User created, but failed to send credentials email.")
+          }
         }
       } else {
         setError(data.error || "Failed to save user")
@@ -172,34 +214,6 @@ export default function UserForm({ user, isEdit = false, onSuccess }: UserFormPr
   const handleInputChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
-
-  // Send email with credentials
-  const sendCredentialsEmail = () => {
-    const subject = "Your Student Management System Account Credentials";
-    const body = `Dear ${formData.fullName},
-
-Welcome to the Student Management System!
-
-Your account has been created successfully. Here are your login credentials:
-
-Full Name: ${formData.fullName}
-Email: ${formData.email}
-Role: ${formData.role.charAt(0).toUpperCase() + formData.role.slice(1)}
-Temporary Password: ${generatedPassword}
-
-Please log in to the system and change your password immediately for security purposes.
-
-Login URL: ${window.location.origin}/login
-
-Best regards,
-Student Management System Team`;
-
-    // Create mailto link
-    const mailtoLink = `mailto:${formData.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    
-    // Open default email client
-    window.open(mailtoLink);
-  };
 
   return (
     <Card className="max-w-lg mx-auto">
@@ -292,29 +306,8 @@ Student Management System Team`;
               Cancel
             </Button>
           </div>
-
-          {/* Send Email Button - Only show after successful user creation */}
-          {showEmailButton && generatedPassword && (
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="flex items-center gap-2 mb-3">
-                <Mail className="h-4 w-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-800">Send Credentials Email</span>
-              </div>
-              <p className="text-sm text-blue-700 mb-3">
-                Click the button below to open your email client and send the login credentials to {formData.email}
-              </p>
-              <Button 
-                type="button" 
-                onClick={sendCredentialsEmail}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Mail className="h-4 w-4 mr-2" />
-                Send Email
-              </Button>
-            </div>
-          )}
         </form>
       </CardContent>
     </Card>
   )
-} 
+}

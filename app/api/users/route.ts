@@ -46,12 +46,14 @@ export async function POST(request: NextRequest) {
     const createdBy = decoded.userId
     try {
       const passwordHash = await hashPassword(password)
-      const result = await createUser({ email, passwordHash, fullName, role, createdBy })
+      // For teacher/admin, force password change on first login
+      const mustChangePassword = role === "teacher" || role === "admin"
+      const result = await createUser({ email, passwordHash, fullName, role, createdBy, mustChangePassword })
       return NextResponse.json(result[0])
-    } catch (dbError) {
-      return NextResponse.json({ error: dbError.message || dbError.toString() }, { status: 500 })
+    } catch (dbError: any) {
+      return NextResponse.json({ error: dbError?.message || String(dbError) }, { status: 500 })
     }
-  } catch (error) {
-    return NextResponse.json({ error: error.message || error.toString() }, { status: 500 })
+  } catch (error: any) {
+    return NextResponse.json({ error: error?.message || String(error) }, { status: 500 })
   }
 } 

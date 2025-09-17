@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,17 +12,60 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from "@/compon
 import { Select, SelectItem, SelectTrigger, SelectContent } from "@/components/ui/select"
 
 export default function StudentsPage() {
-  const [students, setStudents] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [searchLoading, setSearchLoading] = useState(false)
-  const [user, setUser] = useState<any>(null)
-  const [search, setSearch] = useState("")
+  const [allStudents, setAllStudents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [search, setSearch] = useState("");
   const [filters, setFilters] = useState({
-    marital_status: [] as string[],
     sex: [] as string[],
     district: "",
-    has_driving_license: [] as string[],
-  })
+    education_level: [] as string[],
+  });
+  // ...existing code...
+  const students = React.useMemo(() => {
+    let filtered = allStudents;
+    
+    // Apply search filter
+    if (search) {
+      filtered = filtered.filter((s: any) => (
+        (s.full_name || '').toLowerCase().includes(search.toLowerCase()) ||
+        (s.national_id || '').toLowerCase().includes(search.toLowerCase()) ||
+        (s.passport_id || '').toLowerCase().includes(search.toLowerCase()) ||
+        (s.mobile_phone || '').toLowerCase().includes(search.toLowerCase())
+      ));
+    }
+    
+    // Apply filters
+    if (filters.sex.length > 0) {
+      filtered = filtered.filter((s: any) => 
+        filters.sex.includes(s.sex?.toLowerCase())
+      );
+    }
+    
+    if (filters.education_level.length > 0) {
+      filtered = filtered.filter((s: any) => {
+        return filters.education_level.some(level => {
+          if (level === 'only_ol') {
+            // Only O/L: has O/L but not A/L
+            return s.education_ol && !s.education_al;
+          } else if (level === 'both_ol_al') {
+            // Both O/L and A/L: has both qualifications
+            return s.education_ol && s.education_al;
+          }
+          return false;
+        });
+      });
+    }
+    
+    if (filters.district && filters.district !== "all" && filters.district !== "") {
+      filtered = filtered.filter((s: any) => 
+        s.district?.toLowerCase() === filters.district.toLowerCase()
+      );
+    }
+    
+    return filtered;
+  }, [allStudents, search, filters]);
     const [editingStatusId, setEditingStatusId] = useState<string | null>(null);
     const [newStatus, setNewStatus] = useState<string>("");
     const [confirmOpen, setConfirmOpen] = useState(false);
@@ -86,6 +129,14 @@ export default function StudentsPage() {
   const [filterOpen, setFilterOpen] = useState(false)
   const searchTimeoutRef = useRef<NodeJS.Timeout>()
 
+  // Helper function to format education levels
+  const formatEducationLevel = (student: any) => {
+    const education = [];
+    if (student.education_ol) education.push('GCE O/L');
+    if (student.education_al) education.push('GCE A/L');
+    return education.length > 0 ? education.join(', ') : 'Not specified';
+  }
+
   useEffect(() => {
     const userData = localStorage.getItem("user")
     if (userData) {
@@ -100,11 +151,8 @@ export default function StudentsPage() {
     try {
       const token = localStorage.getItem("token")
       const url = new URL(window.location.origin + "/api/students")
+      // Only send search parameter to server, handle filters client-side
       if (search) url.searchParams.append("q", search)
-      if (filters.marital_status.length > 0) url.searchParams.append("marital_status", filters.marital_status.join(","))
-      if (filters.sex.length > 0) url.searchParams.append("sex", filters.sex.join(","))
-      if (filters.has_driving_license.length > 0) url.searchParams.append("has_driving_license", filters.has_driving_license.join(","))
-      if (filters.district && filters.district !== "all") url.searchParams.append("district", filters.district)
       const response = await fetch(url.toString(), {
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -116,7 +164,7 @@ export default function StudentsPage() {
           const nameB = (b.full_name || '').toLowerCase()
           return nameA.localeCompare(nameB)
         })
-        setStudents(sortedStudents)
+  setAllStudents(sortedStudents)
       }
     } catch (error) {
       console.error("Failed to fetch students:", error)
@@ -127,71 +175,51 @@ export default function StudentsPage() {
   }
 
   const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
+    const value = e.target.value;
     // Filter to allow only alphanumeric characters and spaces
-    const filteredValue = value.replace(/[^a-zA-Z0-9\s]/g, '')
-    setSearch(filteredValue)
-    setSearchLoading(true)
-    
-    // Clear existing timeout
+    const filteredValue = value.replace(/[^a-zA-Z0-9\s]/g, '');
+    setSearch(filteredValue);
+    setSearchLoading(true);
     if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current)
+      clearTimeout(searchTimeoutRef.current);
     }
-    
-    // Set new timeout for smooth search
     searchTimeoutRef.current = setTimeout(() => {
-      fetchStudents()
-    }, 300) // 300ms delay for smooth search
+      setSearchLoading(false);
+    }, 200);
   }
 
   const handleClearSearch = () => {
-    // Clear existing timeout
     if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current)
+      clearTimeout(searchTimeoutRef.current);
     }
-    
-    setSearch("")
-    setSearchLoading(true)
-    
-    // Fetch all students immediately after clearing search
-    const token = localStorage.getItem("token")
-    const url = new URL(window.location.origin + "/api/students")
-    if (filters.marital_status.length > 0) url.searchParams.append("marital_status", filters.marital_status.join(","))
-    if (filters.sex.length > 0) url.searchParams.append("sex", filters.sex.join(","))
-    if (filters.has_driving_license.length > 0) url.searchParams.append("has_driving_license", filters.has_driving_license.join(","))
-    if (filters.district && filters.district !== "all") url.searchParams.append("district", filters.district)
-    
-    fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    .then(response => {
-      if (response.ok) {
-        return response.json()
+    setSearch("");
+    setSearchLoading(false);
+  // ...existing code...
+  const students = React.useMemo(() => {
+    if (!search) return allStudents;
+    const filtered = allStudents.map(s => ({
+      ...s,
+      _match: (
+        (s.full_name || '').toLowerCase().includes(search.toLowerCase()) ||
+        (s.national_id || '').toLowerCase().includes(search.toLowerCase()) ||
+        (s.passport_id || '').toLowerCase().includes(search.toLowerCase()) ||
+        (s.mobile_phone || '').toLowerCase().includes(search.toLowerCase())
+      )
+    }));
+    return [...filtered].sort((a, b) => {
+      if (a._match === b._match) {
+        return (a.full_name || '').localeCompare(b.full_name || '');
       }
-      throw new Error('Failed to fetch students')
-    })
-    .then(data => {
-      // Sort students by full_name in ascending order
-      const sortedStudents = data.sort((a: any, b: any) => {
-        const nameA = (a.full_name || '').toLowerCase()
-        const nameB = (b.full_name || '').toLowerCase()
-        return nameA.localeCompare(nameB)
-      })
-      setStudents(sortedStudents)
-    })
-    .catch(error => {
-      console.error("Failed to fetch students:", error)
-    })
-    .finally(() => {
-      setLoading(false)
-      setSearchLoading(false)
-    })
+      return a._match ? -1 : 1;
+    });
+  }, [allStudents, search]);
   }
 
-  useEffect(() => {
-    fetchStudents()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters])
+  // Remove the useEffect that triggers on filter changes
+  // useEffect(() => {
+  //   fetchStudents()
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [filters])
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -202,7 +230,7 @@ export default function StudentsPage() {
     }
   }, [])
 
-  const handleCheckboxChange = (filterKey: "marital_status" | "sex" | "has_driving_license", value: string) => {
+  const handleCheckboxChange = (filterKey: "sex" | "education_level", value: string) => {
     setFilters(prev => {
       const arr = prev[filterKey]
       let newArr
@@ -229,15 +257,12 @@ export default function StudentsPage() {
 
   const handleClearFilters = () => {
     setFilters({
-      marital_status: [],
       sex: [],
       district: "",
-      has_driving_license: [],
+      education_level: [],
     })
     setFilterOpen(false)
-    setTimeout(() => {
-      fetchStudents()
-    }, 0)
+    // No need to call fetchStudents() since we're using client-side filtering
   }
 
   const handleExportCSV = async () => {
@@ -245,9 +270,9 @@ export default function StudentsPage() {
       const token = localStorage.getItem("token")
       const url = new URL(window.location.origin + "/api/students")
       if (search) url.searchParams.append("q", search)
-      if (filters.marital_status.length > 0) url.searchParams.append("marital_status", filters.marital_status.join(","))
+      // Apply current filters to export - pass them as parameters for server-side export
       if (filters.sex.length > 0) url.searchParams.append("sex", filters.sex.join(","))
-      if (filters.has_driving_license.length > 0) url.searchParams.append("has_driving_license", filters.has_driving_license.join(","))
+      if (filters.education_level.length > 0) url.searchParams.append("education_level", filters.education_level.join(","))
       if (filters.district && filters.district !== "all") url.searchParams.append("district", filters.district)
       url.searchParams.append("format", "csv")
       const response = await fetch(url.toString(), {
@@ -352,18 +377,6 @@ export default function StudentsPage() {
             <Button variant="secondary"><Filter className="h-4 w-4 mr-2" />Filters</Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-64">
-            <div className="px-2 py-1 text-xs font-semibold text-gray-500">Marital Status</div>
-            {["single", "married", "divorced", "widowed"].map(option => (
-              <label key={option} className="flex items-center px-2 py-1 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={filters.marital_status.includes(option)}
-                  onChange={() => handleCheckboxChange("marital_status", option)}
-                  className="mr-2"
-                />
-                {option.charAt(0).toUpperCase() + option.slice(1)}
-              </label>
-            ))}
             <div className="px-2 py-1 text-xs font-semibold text-gray-500">Gender</div>
             {["male", "female"].map(option => (
               <label key={option} className="flex items-center px-2 py-1 cursor-pointer">
@@ -376,16 +389,19 @@ export default function StudentsPage() {
                 {option.charAt(0).toUpperCase() + option.slice(1)}
               </label>
             ))}
-            <div className="px-2 py-1 text-xs font-semibold text-gray-500">Has Driving License</div>
-            {["true", "false"].map(option => (
-              <label key={option} className="flex items-center px-2 py-1 cursor-pointer">
+            <div className="px-2 py-1 text-xs font-semibold text-gray-500">Education Level</div>
+            {[
+              { value: "only_ol", label: "Only GCE O/L" },
+              { value: "both_ol_al", label: "Both O/L and A/L" }
+            ].map(option => (
+              <label key={option.value} className="flex items-center px-2 py-1 cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={filters.has_driving_license.includes(option)}
-                  onChange={() => handleCheckboxChange("has_driving_license", option)}
+                  checked={filters.education_level.includes(option.value)}
+                  onChange={() => handleCheckboxChange("education_level", option.value)}
                   className="mr-2"
                 />
-                {option === "true" ? "Yes" : "No"}
+                {option.label}
               </label>
             ))}
             <div className="px-2 py-1 text-xs font-semibold text-gray-500">District</div>
@@ -484,7 +500,7 @@ export default function StudentsPage() {
                       </>
                     ) : (
                       <>
-                        <Badge variant={student.status === "employed" ? "default" : "secondary"}>{student.status}</Badge>
+                        <Badge variant={student.status === "employed" ? "default" : "secondary"}>{student.status === "employed" ? "employed" : "pending"}</Badge>
                         <Button 
                           variant="ghost" 
                           size="sm" 
@@ -494,11 +510,7 @@ export default function StudentsPage() {
                           <Eye className="h-4 w-4 mr-1" />
                           View
                         </Button>
-                        {user && hasPermission(user.role, "UPDATE_STUDENT") && (
-                          <Button variant="outline" size="sm" onClick={() => { setEditingStatusId(student.id); setNewStatus(student.status); }}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        )}
+                          {/* Edit button removed as requested */}
                       </>
                     )}
                   </div>
@@ -511,7 +523,7 @@ export default function StudentsPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
                     <p className="font-medium">Education</p>
-                    <p className="text-muted-foreground">{student.education_qualification}</p>
+                    <p className="text-muted-foreground">{formatEducationLevel(student)}</p>
                   </div>
                   <div>
                     <p className="font-medium">Age</p>

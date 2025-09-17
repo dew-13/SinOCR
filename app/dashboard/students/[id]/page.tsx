@@ -70,6 +70,8 @@ export default function StudentDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [user, setUser] = useState<any>(null)
+  const [employment, setEmployment] = useState<any>(null)
+  const [employmentLoading, setEmploymentLoading] = useState(false)
 
   useEffect(() => {
     // Get user from localStorage
@@ -84,7 +86,36 @@ export default function StudentDetailPage() {
     }
 
     fetchStudent()
+      fetchEmploymentDetails()
   }, [studentId])
+  const fetchEmploymentDetails = async () => {
+    setEmploymentLoading(true)
+    try {
+      const token = localStorage.getItem("token")
+      if (!token) {
+        setEmployment(null)
+        setEmploymentLoading(false)
+        return
+      }
+      // Try to fetch employment by student id (placement API returns all, filter client-side)
+      const response = await fetch(`/api/placements`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!response.ok) {
+        setEmployment(null)
+        setEmploymentLoading(false)
+        return
+      }
+      const data = await response.json()
+      // Find employment for this student
+      const emp = data.find((p: any) => String(p.student_id) === String(studentId))
+      setEmployment(emp || null)
+    } catch (error) {
+      setEmployment(null)
+    } finally {
+      setEmploymentLoading(false)
+    }
+  }
 
   const fetchStudent = async () => {
     try {
@@ -180,7 +211,7 @@ export default function StudentDetailPage() {
         <div className="flex items-center gap-4">
           <Button variant="outline" onClick={() => router.back()}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Students
+          
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Student Details</h1>
@@ -405,16 +436,13 @@ export default function StudentDetailPage() {
                 <p className="text-sm text-gray-900">{student.work_experience}</p>
               </div>
             )}
-            
             {student.work_experience_abroad && (
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">International Experience</p>
                 <p className="text-sm text-gray-900">{student.work_experience_abroad}</p>
               </div>
             )}
-            
             <Separator />
-            
             <div>
               <h4 className="text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
                 <Car className="h-4 w-4" />
@@ -427,6 +455,50 @@ export default function StudentDetailPage() {
                   {student.vehicle_type && ` - ${student.vehicle_type}`}
                 </span>
               </div>
+            </div>
+            {/* Employment Details Section */}
+            <Separator />
+            <div>
+              <h4 className="text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
+                <Briefcase className="h-4 w-4 text-orange-600" />
+                Employment Details
+              </h4>
+              {employmentLoading ? (
+                <p className="text-sm text-gray-500">Loading employment details...</p>
+              ) : employment ? (
+                <div className="space-y-2">
+                  <div>
+                    <span className="text-xs text-gray-500">Company</span>
+                    <span className="block text-sm text-gray-900 font-medium">{employment.company_name}</span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500">Industry</span>
+                    <span className="block text-sm text-gray-900">{employment.industry || "General"}</span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500">Visa Type</span>
+                    <span className="block text-sm text-gray-900">{employment.visa_type || "-"}</span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500">Language Proficiency</span>
+                    <span className="block text-sm text-gray-900">{employment.language_proficiency || "Not specified"}</span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500">Employment Duration</span>
+                    <span className="block text-sm text-gray-900">{employment.start_date ? formatDate(employment.start_date) : "-"} — {employment.end_date ? formatDate(employment.end_date) : "-"}</span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500">Location</span>
+                    <span className="block text-sm text-gray-900">{employment.resident_address || "-"}</span>
+                  </div>
+                  <div>
+                    <span className="text-xs text-gray-500">Emergency Contact</span>
+                    <span className="block text-sm text-gray-900">{employment.emergency_contact || "-"}</span>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">No employment record found for this student.</p>
+              )}
             </div>
           </CardContent>
         </Card>

@@ -140,77 +140,79 @@ export default function CompaniesPage() {
 
       <div className="grid gap-4">
         {companies.map((company: any) => (
-          <Card key={company.id} className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-green-500 to-blue-600">
-                    <Building2 className="h-6 w-6 text-white" />
+          <Link key={company.id} href={`/dashboard/companies/${company.id}`} className="block">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-green-500 to-blue-600">
+                      <Building2 className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="flex flex-col gap-1">
+                        {company.company_name}
+                        <span className="block text-sm font-normal text-muted-foreground">
+                          {company.industry || "General"}
+                        </span>
+                      </CardTitle>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="flex flex-col gap-1">
-                      {company.company_name}
-                      <span className="block text-sm font-normal text-muted-foreground">
-                        {company.industry || "General"}
-                      </span>
-                    </CardTitle>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  {user && hasPermission(user.role, "UPDATE_COMPANY") && (
-                    <Link href={`/dashboard/companies/${company.id}/edit`}>
-                      <Button variant="outline" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  )}
-                  {user && hasPermission(user.role, "DELETE_COMPANY") && (
-                    <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteClick(company)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="h-4 w-4" />
+                  <div className="flex gap-2">
+                    {user && hasPermission(user.role, "UPDATE_COMPANY") && (
+                      <Link href={`/dashboard/companies/${company.id}/edit`} onClick={e => e.stopPropagation()}>
+                        <Button variant="outline" size="sm">
+                          <Edit className="h-4 w-4" />
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Company</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete <b>{companyToDelete?.company_name}</b>? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={confirmDeleteCompany}>Delete</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{company.contact_person  || "Not specified"}</span>
-                    <span className="text-muted-foreground flex items-center gap-1">
-                      <Phone className="h-3 w-3" />
-                      {company.contact_phone || "Not provided"}
-                    </span>
-                  </div>
-                  <div className="text-muted-foreground flex items-center gap-1 mt-1">
-                    <Mail className="h-3 w-3" />
-                    {company.contact_email || "Not provided"}
+                      </Link>
+                    )}
+                    {user && hasPermission(user.role, "DELETE_COMPANY") && (
+                      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={e => { e.stopPropagation(); handleDeleteClick(company); }}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Company</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete <b>{companyToDelete?.company_name}</b>? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={confirmDeleteCompany}>Delete</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{company.contact_person  || "Not specified"}</span>
+                      <span className="text-muted-foreground flex items-center gap-1">
+                        <Phone className="h-3 w-3" />
+                        {company.contact_phone || "Not provided"}
+                      </span>
+                    </div>
+                    <div className="text-muted-foreground flex items-center gap-1 mt-1">
+                      <Mail className="h-3 w-3" />
+                      {company.contact_email || "Not provided"}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
 

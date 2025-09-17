@@ -52,7 +52,7 @@ async function analyzeStudentTrends(data: any[]): Promise<StudentTrendInsight[]>
   })
   
   // Analyze employment success patterns
-  const employedStudents = data.filter(s => s.status === 'Employed')
+  const employedStudents = data.filter(s => ['Employed', 'employed'].includes(s.status))
   const employmentRate = (employedStudents.length / data.length) * 100
   
   insights.push({
@@ -115,7 +115,7 @@ async function generatePredictiveMetrics(data: any[]): Promise<PredictiveMetric[
   })
   
   // Predict employment rate
-  const employed = data.filter(s => s.status === 'Employed').length
+  const employed = data.filter(s => ['Employed', 'employed'].includes(s.status)).length
   const currentEmploymentRate = (employed / data.length) * 100
   const predictedEmploymentRate = Math.min(95, currentEmploymentRate + (Math.random() * 4 - 2)) // Slight variation
   

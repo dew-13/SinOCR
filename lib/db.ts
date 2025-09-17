@@ -430,8 +430,8 @@ export async function getDescriptiveAnalytics() {
     employmentByCountry,
     topCompanies,
   ] = await Promise.all([
-    sql`SELECT COUNT(*) as count FROM students WHERE status = 'active'`,
-    sql`SELECT COUNT(*) as count FROM students WHERE status = 'employed'`,
+    sql`SELECT COUNT(*) as count FROM students WHERE status IN ('Active', 'active', 'Pending')`,
+    sql`SELECT COUNT(DISTINCT student_id) as count FROM placements`,
     sql`
       SELECT district, COUNT(*) as count 
       FROM students 
@@ -494,7 +494,7 @@ export async function getPredictiveAnalytics() {
       SELECT 
         EXTRACT(YEAR FROM created_at) as year,
         COUNT(*) as registrations,
-        COUNT(CASE WHEN status = 'employed' THEN 1 END) as employed
+        COUNT(CASE WHEN status IN ('Employed', 'employed') THEN 1 END) as employed
       FROM students 
       WHERE created_at >= CURRENT_DATE - INTERVAL '3 years'
       GROUP BY EXTRACT(YEAR FROM created_at)
@@ -513,9 +513,9 @@ export async function getPredictiveAnalytics() {
       SELECT 
         province,
         COUNT(*) as total_students,
-        COUNT(CASE WHEN status = 'employed' THEN 1 END) as employed_students,
+        COUNT(CASE WHEN status IN ('Employed', 'employed') THEN 1 END) as employed_students,
         ROUND(
-          (COUNT(CASE WHEN status = 'employed' THEN 1 END)::float / COUNT(*)::float) * 100, 
+          (COUNT(CASE WHEN status IN ('Employed', 'employed') THEN 1 END)::float / COUNT(*)::float) * 100, 
           2
         ) as success_rate
       FROM students 

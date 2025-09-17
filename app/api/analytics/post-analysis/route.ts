@@ -40,11 +40,11 @@ export async function GET(request: NextRequest) {
       sql`
         SELECT 
           COUNT(*) as total_students,
-          COUNT(CASE WHEN s.status = 'employed' THEN 1 END) as employed_students,
-          COUNT(CASE WHEN s.status = 'active' THEN 1 END) as active_students,
+          COUNT(CASE WHEN s.status IN ('Employed', 'employed') THEN 1 END) as employed_students,
+          COUNT(CASE WHEN s.status IN ('Active', 'active', 'Pending') THEN 1 END) as active_students,
           COUNT(CASE WHEN s.status = 'inactive' THEN 1 END) as inactive_students,
           ROUND(
-            (COUNT(CASE WHEN s.status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
+            (COUNT(CASE WHEN s.status IN ('Employed', 'employed') THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
           ) as overall_success_rate
         FROM students s
       `,
@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
           MIN(e.employment_date) as first_hire,
           MAX(e.employment_date) as latest_hire,
           ROUND(
-            (COUNT(e.id)::DECIMAL / (SELECT COUNT(*) FROM students WHERE status = 'employed')) * 100, 2
+            (COUNT(e.id)::DECIMAL / (SELECT COUNT(*) FROM students WHERE status IN ('Employed', 'employed'))) * 100, 2
           ) as market_share
         FROM companies c
         LEFT JOIN employees e ON c.id = e.company_id
@@ -128,11 +128,11 @@ export async function GET(request: NextRequest) {
           s.district,
           s.province,
           COUNT(*) as total_students,
-          COUNT(CASE WHEN s.status = 'employed' THEN 1 END) as employed_students,
+          COUNT(CASE WHEN s.status IN ('Employed', 'employed') THEN 1 END) as employed_students,
           ROUND(
-            (COUNT(CASE WHEN s.status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
+            (COUNT(CASE WHEN s.status IN ('Employed', 'employed') THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
           ) as employment_rate,
-          COUNT(CASE WHEN s.status = 'active' THEN 1 END) as active_students
+          COUNT(CASE WHEN s.status IN ('Active', 'active', 'Pending') THEN 1 END) as active_students
         FROM students s
         GROUP BY s.district, s.province
         ORDER BY employment_rate DESC
@@ -144,9 +144,9 @@ export async function GET(request: NextRequest) {
           s.sex,
           s.marital_status,
           COUNT(*) as total_students,
-          COUNT(CASE WHEN s.status = 'employed' THEN 1 END) as employed_students,
+          COUNT(CASE WHEN s.status IN ('Employed', 'employed') THEN 1 END) as employed_students,
           ROUND(
-            (COUNT(CASE WHEN s.status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
+            (COUNT(CASE WHEN s.status IN ('Employed', 'employed') THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
           ) as employment_rate,
           AVG(EXTRACT(YEAR FROM CURRENT_DATE) - EXTRACT(YEAR FROM s.date_of_birth)) as avg_age
         FROM students s
@@ -159,9 +159,9 @@ export async function GET(request: NextRequest) {
         SELECT 
           'General' as education_qualification,
           COUNT(*) as total_students,
-          COUNT(CASE WHEN s.status = 'employed' THEN 1 END) as employed_students,
+          COUNT(CASE WHEN s.status IN ('Employed', 'employed') THEN 1 END) as employed_students,
           ROUND(
-            (COUNT(CASE WHEN s.status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
+            (COUNT(CASE WHEN s.status IN ('Employed', 'employed') THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
           ) as employment_rate,
           AVG(e.contract_duration_months) as avg_contract_duration
         FROM students s
@@ -179,9 +179,9 @@ export async function GET(request: NextRequest) {
             ELSE 'Other'
           END as experience_level,
           COUNT(*) as total_students,
-          COUNT(CASE WHEN s.status = 'employed' THEN 1 END) as employed_students,
+          COUNT(CASE WHEN s.status IN ('Employed', 'employed') THEN 1 END) as employed_students,
           ROUND(
-            (COUNT(CASE WHEN s.status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
+            (COUNT(CASE WHEN s.status IN ('Employed', 'employed') THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
           ) as employment_rate
         FROM students s
         GROUP BY experience_level
@@ -193,9 +193,9 @@ export async function GET(request: NextRequest) {
         SELECT 
           DATE_TRUNC('month', s.created_at) as month,
           COUNT(*) as registrations,
-          COUNT(CASE WHEN s.status = 'employed' THEN 1 END) as employments,
+          COUNT(CASE WHEN s.status IN ('Employed', 'employed') THEN 1 END) as employments,
           ROUND(
-            (COUNT(CASE WHEN s.status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
+            (COUNT(CASE WHEN s.status IN ('Employed', 'employed') THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
           ) as success_rate
         FROM students s
         WHERE s.created_at >= CURRENT_DATE - INTERVAL '24 months'
@@ -208,9 +208,9 @@ export async function GET(request: NextRequest) {
         SELECT 
           EXTRACT(YEAR FROM s.created_at) as year,
           COUNT(*) as total_registrations,
-          COUNT(CASE WHEN s.status = 'employed' THEN 1 END) as total_employments,
+          COUNT(CASE WHEN s.status IN ('Employed', 'employed') THEN 1 END) as total_employments,
           ROUND(
-            (COUNT(CASE WHEN s.status = 'employed' THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
+            (COUNT(CASE WHEN s.status IN ('Employed', 'employed') THEN 1 END)::DECIMAL / COUNT(*)) * 100, 2
           ) as yearly_success_rate
         FROM students s
         WHERE s.created_at >= CURRENT_DATE - INTERVAL '60 months'

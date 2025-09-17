@@ -5,11 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { AIInsightsData } from "@/lib/types/ai-insights"
-import { TrendInsightCard } from "./trend-insight-card"
-import { PredictiveMetricCard } from "./predictive-metric-card"
-import { GeographicTrendCard } from "./geographic-trend-card"
-import { IndustryForecastCard } from "./industry-forecast-card"
 import { 
   Brain, 
   TrendingUp, 
@@ -22,8 +17,36 @@ import {
   Clock,
   Target,
   Zap,
-  BarChart3
+  BarChart3,
+  Briefcase
 } from "lucide-react"
+
+interface AIInsightsData {
+  provinceRegistrations: {
+    predictions: Record<string, number>;
+    totalPredicted: number;
+    confidence: number;
+    insights: string[];
+    recommendations: string[];
+    historicalTrends?: Record<string, number>;
+    seasonalFactors?: Record<string, number>;
+  };
+  jobCategoryEmployment: {
+    predictions: Record<string, number>;
+    totalPredicted: number;
+    confidence: number;
+    insights: string[];
+    recommendations: string[];
+    marketDemand?: Record<string, number>;
+    riskFactors?: string[];
+  };
+  generatedAt: string;
+  dataPoints: {
+    totalStudents: number;
+    totalPlacements: number;
+    analysisRange: string;
+  };
+}
 
 export default function AIInsightsDashboard() {
   const [data, setData] = useState<AIInsightsData | null>(null)
@@ -37,13 +60,17 @@ export default function AIInsightsDashboard() {
   const fetchAIInsights = async () => {
     try {
       const token = localStorage.getItem("token")
-      const response = await fetch("/api/analytics/ai-insights", {
+      const response = await fetch("/api/ai-insights", {
         headers: { Authorization: `Bearer ${token}` },
       })
 
       if (response.ok) {
-        const insightsData = await response.json()
-        setData(insightsData)
+        const result = await response.json()
+        if (result.success) {
+          setData(result.data)
+        } else {
+          setError(result.error || "Failed to load AI insights")
+        }
       } else {
         setError("Failed to load AI insights")
       }
@@ -96,222 +123,239 @@ export default function AIInsightsDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="border-l-4 border-l-purple-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Insights</CardTitle>
-            <Brain className="h-4 w-4 text-purple-500" />
+            <CardTitle className="text-sm font-medium">Total Students</CardTitle>
+            <Users className="h-4 w-4 text-purple-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.overview.totalInsights}</div>
-            <p className="text-xs text-muted-foreground">Generated insights</p>
+            <div className="text-2xl font-bold">{data.dataPoints.totalStudents}</div>
+            <p className="text-xs text-muted-foreground">Students analyzed</p>
             <Progress value={85} className="mt-2" />
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-orange-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">High Impact</CardTitle>
-            <Zap className="h-4 w-4 text-orange-500" />
+            <CardTitle className="text-sm font-medium">Total Placements</CardTitle>
+            <Briefcase className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.overview.highImpactInsights}</div>
-            <p className="text-xs text-muted-foreground">Requires attention</p>
+            <div className="text-2xl font-bold">{data.dataPoints.totalPlacements}</div>
+            <p className="text-xs text-muted-foreground">Employment records</p>
             <div className="flex items-center mt-2">
-              <AlertTriangle className="h-3 w-3 text-orange-500 mr-1" />
-              <span className="text-xs text-orange-500">Priority items</span>
+              <CheckCircle className="h-3 w-3 text-green-500 mr-1" />
+              <span className="text-xs text-green-500">Active data</span>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-green-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Predictions</CardTitle>
-            <Target className="h-4 w-4 text-green-500" />
+            <CardTitle className="text-sm font-medium">Province Predictions</CardTitle>
+            <MapPin className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.overview.predictionsGenerated}</div>
-            <p className="text-xs text-muted-foreground">Future forecasts</p>
-            <Progress value={data.overview.confidenceLevel} className="mt-2" />
+            <div className="text-2xl font-bold">{data.provinceRegistrations.totalPredicted}</div>
+            <p className="text-xs text-muted-foreground">Next 3 months</p>
+            <Progress value={data.provinceRegistrations.confidence} className="mt-2" />
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-blue-500">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Confidence</CardTitle>
-            <CheckCircle className="h-4 w-4 text-blue-500" />
+            <CardTitle className="text-sm font-medium">Job Predictions</CardTitle>
+            <Target className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.overview.confidenceLevel}%</div>
-            <p className="text-xs text-muted-foreground">Average accuracy</p>
+            <div className="text-2xl font-bold">{data.jobCategoryEmployment.totalPredicted}</div>
+            <p className="text-xs text-muted-foreground">Employment forecast</p>
             <div className="flex items-center mt-2">
-              <CheckCircle className="h-3 w-3 text-green-500 mr-1" />
-              <span className="text-xs text-green-500">High reliability</span>
+              <CheckCircle className="h-3 w-3 text-blue-500 mr-1" />
+              <span className="text-xs text-blue-500">{data.jobCategoryEmployment.confidence}% confidence</span>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Alerts */}
-      {data.alerts.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-orange-500" />
-              Priority Alerts
-            </CardTitle>
-            <CardDescription>Items requiring immediate attention</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {data.alerts.map((alert, index) => (
-                <div key={index} className={`p-3 rounded-lg border ${
-                  alert.severity === 'critical' ? 'bg-red-50 border-red-200' :
-                  alert.severity === 'high' ? 'bg-orange-50 border-orange-200' :
-                  alert.severity === 'medium' ? 'bg-yellow-50 border-yellow-200' :
-                  'bg-blue-50 border-blue-200'
-                }`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Badge variant="outline" className={
-                        alert.severity === 'critical' ? 'bg-red-100 text-red-800' :
-                        alert.severity === 'high' ? 'bg-orange-100 text-orange-800' :
-                        alert.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-blue-100 text-blue-800'
-                      }>
-                        {alert.type}
-                      </Badge>
-                      <span className="font-medium">{alert.title}</span>
-                    </div>
-                    {alert.deadline && (
-                      <div className="flex items-center text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3 mr-1" />
-                        Due: {new Date(alert.deadline).toLocaleDateString()}
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">{alert.description}</p>
-                </div>
-              ))}
+      {/* AI Analysis Summary */}
+      <Card className="bg-gradient-to-r from-blue-50 to-green-50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="h-5 w-5 text-purple-600" />
+            AI Analysis Summary
+          </CardTitle>
+          <CardDescription>Generated on {new Date(data.generatedAt).toLocaleString()}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <h4 className="font-medium text-blue-600 mb-2">Province Forecast</h4>
+              <p className="text-2xl font-bold text-blue-700">{data.provinceRegistrations.totalPredicted}</p>
+              <p className="text-sm text-gray-600">Total predicted registrations</p>
+              <p className="text-xs text-gray-500 mt-1">Confidence: {data.provinceRegistrations.confidence}%</p>
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Trend Insights */}
-      {data.trends.length > 0 && (
-        <div>
-          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-            <TrendingUp className="h-6 w-6 text-green-600" />
-            Trend Insights
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {data.trends.map((trend, index) => (
-              <TrendInsightCard key={index} insight={trend} />
-            ))}
+            <div>
+              <h4 className="font-medium text-green-600 mb-2">Japan Employment Forecast</h4>
+              <p className="text-2xl font-bold text-green-700">{data.jobCategoryEmployment.totalPredicted}</p>
+              <p className="text-sm text-gray-600">Japan placement opportunities</p>
+              <p className="text-xs text-gray-500 mt-1">Confidence: {data.jobCategoryEmployment.confidence}%</p>
+              <div className="flex items-center mt-1">
+                <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">🇯🇵 Japan Focus</span>
+              </div>
+            </div>
+            <div>
+              <h4 className="font-medium text-purple-600 mb-2">Data Analysis</h4>
+              <p className="text-2xl font-bold text-purple-700">{data.dataPoints.totalStudents + data.dataPoints.totalPlacements}</p>
+              <p className="text-sm text-gray-600">Total records analyzed</p>
+              <p className="text-xs text-gray-500 mt-1">Range: {data.dataPoints.analysisRange}</p>
+            </div>
           </div>
-        </div>
-      )}
+        </CardContent>
+      </Card>
 
-      {/* Predictions */}
-      {data.predictions.length > 0 && (
-        <div>
-          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-            <Target className="h-6 w-6 text-blue-600" />
-            Predictive Analytics
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {data.predictions.map((prediction, index) => (
-              <PredictiveMetricCard key={index} metric={prediction} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Geographic Trends */}
-      {data.geographic.length > 0 && (
-        <div>
-          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-            <MapPin className="h-6 w-6 text-purple-600" />
-            Geographic Analysis
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {data.geographic.slice(0, 6).map((geo, index) => (
-              <GeographicTrendCard key={index} trend={geo} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Industry Forecasts */}
-      {data.industries.length > 0 && (
-        <div>
-          <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-            <Building2 className="h-6 w-6 text-indigo-600" />
-            Industry Forecasts
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {data.industries.slice(0, 6).map((industry, index) => (
-              <IndustryForecastCard key={index} forecast={industry} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Recommendations */}
+      {/* Province Registration Predictions */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Lightbulb className="h-5 w-5 text-yellow-500" />
-            Strategic Recommendations
+            <MapPin className="h-5 w-5 text-blue-600" />
+            Province Registration Predictions
           </CardTitle>
-          <CardDescription>AI-generated actionable recommendations</CardDescription>
+          <CardDescription>Predicted student registrations by province for the next 3 months</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-medium text-red-600 mb-2">Immediate Actions</h4>
-                <ul className="space-y-1">
-                  {data.recommendations.immediate.map((rec, index) => (
-                    <li key={index} className="text-sm flex items-start gap-2">
-                      <AlertTriangle className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
-                      {rec}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-medium text-orange-600 mb-2">Short Term (1-3 months)</h4>
-                <ul className="space-y-1">
-                  {data.recommendations.shortTerm.map((rec, index) => (
-                    <li key={index} className="text-sm flex items-start gap-2">
-                      <Clock className="h-3 w-3 text-orange-500 mt-0.5 flex-shrink-0" />
-                      {rec}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Object.entries(data.provinceRegistrations.predictions)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 6)
+                .map(([province, count], index) => (
+                <div key={province} className="p-4 bg-blue-50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-gray-900">{province}</h4>
+                    <Badge className="bg-blue-100 text-blue-800">{count} students</Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">Predicted registrations</p>
+                </div>
+              ))}
             </div>
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-medium text-blue-600 mb-2">Long Term (3-12 months)</h4>
-                <ul className="space-y-1">
-                  {data.recommendations.longTerm.map((rec, index) => (
-                    <li key={index} className="text-sm flex items-start gap-2">
-                      <TrendingUp className="h-3 w-3 text-blue-500 mt-0.5 flex-shrink-0" />
-                      {rec}
+            
+            <div className="mt-6">
+              <h4 className="font-semibold mb-3">Key Insights</h4>
+              <ul className="space-y-2">
+                {data.provinceRegistrations.insights.map((insight, index) => (
+                  <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    {insight}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="mt-6">
+              <h4 className="font-semibold mb-3">Recommendations</h4>
+              <ul className="space-y-2">
+                {data.provinceRegistrations.recommendations.map((rec, index) => (
+                  <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
+                    <Target className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                    {rec}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Japan Employment Predictions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Briefcase className="h-5 w-5 text-green-600" />
+            Japan Employment Predictions
+            <Badge className="bg-red-100 text-red-800">🇯🇵 Japan Focus</Badge>
+          </CardTitle>
+          <CardDescription>Predicted employment placements in Japan for Sri Lankan citizens (next 3 months)</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {Object.entries(data.jobCategoryEmployment.predictions)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 6)
+                .map(([category, count], index) => (
+                <div key={category} className="p-4 bg-green-50 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-gray-900 text-sm">{category}</h4>
+                    <Badge className="bg-green-100 text-green-800">{count} positions</Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">Japan placements</p>
+                  {data.jobCategoryEmployment.marketDemand && (
+                    <div className="mt-2">
+                      <p className="text-xs text-gray-500">
+                        Japan demand: {((data.jobCategoryEmployment.marketDemand[category] || 1) * 100).toFixed(0)}%
+                      </p>
+                      <div className="flex items-center mt-1">
+                        {category === 'Nursing care' && <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">High Priority</span>}
+                        {category === 'Agriculture' && <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">TITP Popular</span>}
+                        {category === 'Information Technology' && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">SSW Eligible</span>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            
+            <div className="mt-6">
+              <h4 className="font-semibold mb-3">Japan Market Insights</h4>
+              <ul className="space-y-2">
+                {data.jobCategoryEmployment.insights.map((insight, index) => (
+                  <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    {insight}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {data.jobCategoryEmployment.riskFactors && (
+              <div className="mt-6">
+                <h4 className="font-semibold mb-3 text-orange-600">Japan Employment Risk Factors</h4>
+                <ul className="space-y-2">
+                  {data.jobCategoryEmployment.riskFactors.map((risk, index) => (
+                    <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
+                      <AlertTriangle className="h-4 w-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                      {risk}
                     </li>
                   ))}
                 </ul>
               </div>
-              <div>
-                <h4 className="font-medium text-purple-600 mb-2">Strategic (1+ years)</h4>
-                <ul className="space-y-1">
-                  {data.recommendations.strategic.map((rec, index) => (
-                    <li key={index} className="text-sm flex items-start gap-2">
-                      <Target className="h-3 w-3 text-purple-500 mt-0.5 flex-shrink-0" />
-                      {rec}
-                    </li>
-                  ))}
-                </ul>
+            )}
+
+            <div className="mt-6">
+              <h4 className="font-semibold mb-3">Japan Employment Strategy</h4>
+              <ul className="space-y-2">
+                {data.jobCategoryEmployment.recommendations.map((rec, index) => (
+                  <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
+                    <Target className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                    {rec}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Japan Visa Types Info */}
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+              <h4 className="font-semibold mb-3 text-blue-800">Japan Visa Programs</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="font-medium text-blue-700">TITP (Technical Intern Training)</p>
+                  <p className="text-gray-600">3-5 year programs, basic skill training</p>
+                  <p className="text-xs text-gray-500">Popular: Agriculture, Manufacturing, Construction</p>
+                </div>
+                <div>
+                  <p className="font-medium text-blue-700">SSW (Specified Skilled Worker)</p>
+                  <p className="text-gray-600">5+ year programs, skilled workers</p>
+                  <p className="text-xs text-gray-500">Focus: Nursing care, IT, Advanced manufacturing</p>
+                </div>
               </div>
             </div>
           </div>

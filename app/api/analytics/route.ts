@@ -32,8 +32,8 @@ export async function GET(request: NextRequest) {
       monthlyRegistrations,
       totalRegisteredStudents,
     ] = await Promise.all([
-      sql`SELECT COUNT(*) as count FROM students WHERE status = 'active'`,
-      sql`SELECT COUNT(*) as count FROM students WHERE status = 'employed'`,
+      sql`SELECT COUNT(*) as count FROM students WHERE status IN ('Active', 'active', 'Pending')`,
+      sql`SELECT COUNT(DISTINCT student_id) as count FROM placements`,
       sql`SELECT COUNT(*) as count FROM users`,
       sql`SELECT COUNT(*) as count FROM companies`,
       sql`SELECT COUNT(*) as count FROM employees`,

@@ -33,7 +33,44 @@ interface AnalyticsChartsProps {
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8", "#82CA9D"]
 
+// Helper function to calculate logical Y-axis ticks
+const calculateYAxisTicks = (maxValue: number) => {
+  if (maxValue === 0) return [0, 1, 2, 3, 4, 5] // Default when no data
+  if (maxValue <= 5) return [0, 1, 2, 3, 4, 5]
+  if (maxValue <= 10) return [0, 2, 4, 6, 8, 10]
+  if (maxValue <= 15) return [0, 3, 6, 9, 12, 15]
+  if (maxValue <= 20) return [0, 5, 10, 15, 20]
+  if (maxValue <= 25) return [0, 5, 10, 15, 20, 25]
+  if (maxValue <= 30) return [0, 5, 10, 15, 20, 25, 30]
+  if (maxValue <= 40) return [0, 10, 20, 30, 40]
+  if (maxValue <= 50) return [0, 10, 20, 30, 40, 50]
+  if (maxValue <= 100) return [0, 20, 40, 60, 80, 100]
+  
+  // For larger values, use increments of 25, 50, or 100
+  const increment = maxValue <= 200 ? 25 : maxValue <= 500 ? 50 : 100
+  const ticks = []
+  const maxTick = Math.ceil(maxValue / increment) * increment
+  for (let i = 0; i <= maxTick; i += increment) {
+    ticks.push(i)
+  }
+  return ticks
+}
+
+// Helper function to get max value from data
+const getMaxValue = (data: Array<{ count: number }>) => {
+  return Math.max(...data.map(item => item.count), 0)
+}
+
 export default function AnalyticsCharts({ data }: AnalyticsChartsProps) {
+  // Calculate logical Y-axis ticks for each chart
+  const districtMaxValue = getMaxValue(data.districtStats || [])
+  const provinceMaxValue = getMaxValue(data.provinceStats || [])
+  const monthlyMaxValue = getMaxValue(data.monthlyRegistrations || [])
+  
+  const districtTicks = calculateYAxisTicks(districtMaxValue)
+  const provinceTicks = calculateYAxisTicks(provinceMaxValue)
+  const monthlyTicks = calculateYAxisTicks(monthlyMaxValue)
+
   return (
     <div className="grid gap-6">
       {/* Summary Cards */}
@@ -96,7 +133,11 @@ export default function AnalyticsCharts({ data }: AnalyticsChartsProps) {
               <BarChart data={data.districtStats}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="district" angle={-45} textAnchor="end" height={80} />
-                <YAxis />
+                <YAxis 
+                  domain={[0, Math.max(...districtTicks)]}
+                  ticks={districtTicks}
+                  allowDecimals={false}
+                />
                 <Tooltip />
                 <Bar dataKey="count" fill="#8884d8" />
               </BarChart>
@@ -115,7 +156,11 @@ export default function AnalyticsCharts({ data }: AnalyticsChartsProps) {
               <BarChart data={data.provinceStats}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="province" angle={-45} textAnchor="end" height={80} />
-                <YAxis />
+                <YAxis 
+                  domain={[0, Math.max(...provinceTicks)]}
+                  ticks={provinceTicks}
+                  allowDecimals={false}
+                />
                 <Tooltip />
                 <Bar dataKey="count" fill="#00C49F" />
               </BarChart>
@@ -140,7 +185,11 @@ export default function AnalyticsCharts({ data }: AnalyticsChartsProps) {
                   new Date(value).toLocaleDateString("en-US", { month: "short", year: "2-digit" })
                 }
               />
-              <YAxis />
+              <YAxis 
+                domain={[0, Math.max(...monthlyTicks)]}
+                ticks={monthlyTicks}
+                allowDecimals={false}
+              />
               <Tooltip
                 labelFormatter={(value) =>
                   new Date(value).toLocaleDateString("en-US", { month: "long", year: "numeric" })

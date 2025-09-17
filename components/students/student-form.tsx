@@ -735,7 +735,7 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={loading}
-                  className="h-10"
+                  className="h-10 bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   {loading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -746,20 +746,12 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
                 </Button>
                 <Button
                   type="button"
-                  variant="outline"
                   onClick={() => setShowCsvImport(true)}
                   disabled={loading}
-                  className="h-10"
+                  className="h-10 bg-green-600 hover:bg-green-700 text-white"
                 >
                   <Upload className="mr-2 h-4 w-4" />
                   CSV
-                </Button>
-                <Button
-                  type="button"
-                  className="h-10"
-                  onClick={handleSavePdf}
-                >
-                  Save
                 </Button>
                 <input
                   type="file"
@@ -1190,7 +1182,13 @@ export default function StudentForm({ student, isEdit = false }: StudentFormProp
               <Button type="submit" disabled={loading}>
                 {loading ? "Saving..." : isEdit ? "Update Student" : "Add Student"}
               </Button>
-              <Button type="button" variant="outline" onClick={handleClearForm} disabled={loading}>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleClearForm} 
+                disabled={loading}
+                className="border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400"
+              >
                 Clear
               </Button>
             </div>

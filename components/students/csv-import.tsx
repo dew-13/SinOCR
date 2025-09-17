@@ -497,41 +497,16 @@ export default function CsvImport({ onClose, onSuccess }: CsvImportProps) {
         {/* Download Template */}
         <div className="space-y-4">
           <div className="flex items-center gap-4">
+            <span className="text-sm ">
+              Download a template CSV file with all required columns
+            </span>
+          </div>
+          <div className="flex items-center gap-4">
             <Button variant="outline" onClick={downloadTemplate}>
               <Download className="h-4 w-4 mr-2" />
               Download Template
             </Button>
-            <span className="text-sm text-gray-600">
-              Download a template CSV file with all required columns
-            </span>
-          </div>
-          
-          {/* Validation Guide */}
-          <div className="bg-blue-50 border border-blue-200 rounded-md p-4 max-h-48 overflow-y-auto">
-            <h4 className="font-semibold text-blue-900 mb-2">📋 Data Format Requirements</h4>
-            <div className="text-sm text-blue-800 space-y-1">
-              <div><strong>Sex:</strong> Must be "Male" or "Female" (not M/F)</div>
-              <div><strong>Marital Status:</strong> Must be "Single", "Married", "Divorced", or "Widowed"</div>
-              <div><strong>Dates:</strong> Must be YYYY-MM-DD format (e.g., 1990-01-01) ❌ NOT DD/MM/YYYY</div>
-              <div><strong>Phone Numbers:</strong> Must start with 07 (e.g., 0771234567) ❌ NOT 771234567</div>
-              <div><strong>Email:</strong> Must be valid email format (e.g., user@example.com)</div>
-              <div><strong>Education:</strong> At least one of OL or AL must be "true"</div>
-              <div><strong>Boolean Fields:</strong> Use "true" or "false" (case insensitive)</div>
-              <div><strong>Addresses:</strong> Avoid commas in addresses or use full quotes if needed</div>
-              <div><strong>Text Fields:</strong> Avoid line breaks and special characters when possible</div>
-            </div>
-          </div>
-          
-          {/* Common Mistakes Warning */}
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
-            <h4 className="font-semibold text-amber-800 mb-2">⚠️ Common Mistakes to Avoid</h4>
-            <div className="text-sm text-amber-700 space-y-1">
-              <div>• Don't use DD/MM/YYYY date format (use YYYY-MM-DD instead)</div>
-              <div>• Don't forget "07" prefix for phone numbers</div>
-              <div>• Don't use "M"/"F" for sex (use "Male"/"Female")</div>
-              <div>• Don't leave required fields empty</div>
-              <div>• Don't mix date formats within the same file</div>
-            </div>
+            
           </div>
         </div>
 
@@ -553,6 +528,34 @@ export default function CsvImport({ onClose, onSuccess }: CsvImportProps) {
                 {file.name}
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Data Format Requirements */}
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-4 max-h-48 overflow-y-auto">
+          <h4 className="font-semibold text-blue-900 mb-2">📋 Data Format Requirements</h4>
+          <div className="text-sm text-blue-800 space-y-1">
+            <div><strong>Sex:</strong> Must be "Male" or "Female" (not M/F)</div>
+            <div><strong>Marital Status:</strong> Must be "Single", "Married", "Divorced", or "Widowed"</div>
+            <div><strong>Dates:</strong> Must be YYYY-MM-DD format (e.g., 1990-01-01) ❌ NOT DD/MM/YYYY</div>
+            <div><strong>Phone Numbers:</strong> Must start with 07 (e.g., 0771234567) ❌ NOT 771234567</div>
+            <div><strong>Email:</strong> Must be valid email format (e.g., user@example.com)</div>
+            <div><strong>Education:</strong> At least one of OL or AL must be "true"</div>
+            <div><strong>Boolean Fields:</strong> Use "true" or "false" (case insensitive)</div>
+            <div><strong>Addresses:</strong> Avoid commas in addresses or use full quotes if needed</div>
+            <div><strong>Text Fields:</strong> Avoid line breaks and special characters when possible</div>
+          </div>
+        </div>
+        
+        {/* Common Mistakes Warning */}
+        <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
+          <h4 className="font-semibold text-amber-800 mb-2">⚠️ Common Mistakes to Avoid</h4>
+          <div className="text-sm text-amber-700 space-y-1">
+            <div>• Don't use DD/MM/YYYY date format (use YYYY-MM-DD instead)</div>
+            <div>• Don't forget "07" prefix for phone numbers</div>
+            <div>• Don't use "M"/"F" for sex (use "Male"/"Female")</div>
+            <div>• Don't leave required fields empty</div>
+            <div>• Don't mix date formats within the same file</div>
           </div>
         </div>
 

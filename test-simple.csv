@@ -1,2 +1,0 @@
-studentId,fullName,permanentAddress,district,province,dateOfBirth,nationalId,sex,maritalStatus,mobilePhone,whatsappNumber,emailAddress,expectedJobCategory,educationOL,educationAL,guardianContact,passportId,passportExpiredDate,spouseName,numberOfChildren,hasDrivingLicense,vehicleType,otherQualifications,workExperience,workExperienceAbroad,guardianName,admissionDate
-STU003,Alice Brown,"789 Pine Rd, Galle",Galle,Southern,1995-03-20,950000002V,Female,Single,0773456789,0773456789,alice@example.com,Education,true,true,0772345678,,,,,false,,,,,Alice Guardian,2025-09-16

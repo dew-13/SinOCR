@@ -22,7 +22,7 @@ export async function testConnection() {
 export async function getUsers() {
   try {
     return await sql`
-      SELECT id, email, full_name, role, created_at, is_active,
+      SELECT id, email, full_name, role, created_at, is_active, must_change_password,
              (SELECT full_name FROM users u2 WHERE u2.id = users.created_by) as created_by_name
       FROM users 
       WHERE is_active = true 
@@ -37,7 +37,7 @@ export async function getUsers() {
 export async function getUserByEmail(email: string) {
   try {
     const result = await sql`
-      SELECT id, email, password_hash, full_name, role, is_active 
+      SELECT id, email, password_hash, full_name, role, is_active, must_change_password 
       FROM users 
       WHERE email = ${email} AND is_active = true
     `
@@ -69,11 +69,12 @@ export async function createUser(userData: {
   fullName: string
   role: string
   createdBy: number
+  mustChangePassword?: boolean
 }) {
   return await sql`
-    INSERT INTO users (email, password_hash, full_name, role, created_by)
-    VALUES (${userData.email}, ${userData.passwordHash}, ${userData.fullName}, ${userData.role}, ${userData.createdBy})
-    RETURNING id, email, full_name, role
+    INSERT INTO users (email, password_hash, full_name, role, created_by, must_change_password)
+    VALUES (${userData.email}, ${userData.passwordHash}, ${userData.fullName}, ${userData.role}, ${userData.createdBy}, ${userData.mustChangePassword ?? false})
+    RETURNING id, email, full_name, role, must_change_password
   `
 }
 
@@ -84,6 +85,7 @@ export async function updateUser(
     fullName?: string
     role?: string
     passwordHash?: string
+    mustChangePassword?: boolean
   },
 ) {
   const fields = []
@@ -105,6 +107,10 @@ export async function updateUser(
   if (userData.passwordHash) {
     fields.push(`password_hash = $${++idx}`)
     values.push(userData.passwordHash)
+  }
+  if (typeof userData.mustChangePassword === 'boolean') {
+    fields.push(`must_change_password = $${++idx}`)
+    values.push(userData.mustChangePassword)
   }
 
   if (fields.length === 0) return null

@@ -444,16 +444,21 @@ export default function StudentsPage() {
 
       <div className="grid gap-4">
         {students.map((student: any) => (
-            <Card key={student.id}>
-              <CardHeader>
+            <Card key={student.id} className="transition-all duration-200 hover:shadow-md hover:border-blue-200 cursor-pointer">
+              <CardHeader 
+                className="hover:bg-gray-50 transition-colors duration-150"
+                onClick={() => window.location.href = `/dashboard/students/${student.id}`}
+              >
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle>{student.full_name}</CardTitle>
+                    <CardTitle className="text-blue-600 hover:text-blue-800 transition-colors">
+                      {student.full_name}
+                    </CardTitle>
                     <CardDescription>
                       {student.district}, {student.province} • {student.mobile_phone}
                     </CardDescription>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                     {editingStatusId === student.id ? (
                       <>
                         <select
@@ -480,6 +485,15 @@ export default function StudentsPage() {
                     ) : (
                       <>
                         <Badge variant={student.status === "employed" ? "default" : "secondary"}>{student.status}</Badge>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => window.location.href = `/dashboard/students/${student.id}`}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
                         {user && hasPermission(user.role, "UPDATE_STUDENT") && (
                           <Button variant="outline" size="sm" onClick={() => { setEditingStatusId(student.id); setNewStatus(student.status); }}>
                             <Edit className="h-4 w-4" />
@@ -490,7 +504,10 @@ export default function StudentsPage() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent 
+                className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
+                onClick={() => window.location.href = `/dashboard/students/${student.id}`}
+              >
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
                     <p className="font-medium">Education</p>
